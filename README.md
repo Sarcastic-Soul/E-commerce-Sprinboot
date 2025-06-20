@@ -2,6 +2,10 @@
 
 A full-stack Neo-brutalist styled e-commerce web application built with **React 19 + Vite** frontend and **Spring Boot** backend. Features include JWT-based authentication, role-based access, image upload, product management, a stylish UI inspired by the Neo-brutalism design aesthetic, and more.
 
+## 📸 Preview
+
+![Preview](./Screenshot.png)
+
 ## 🔧 Tech Stack
 
 ### Frontend
@@ -138,10 +142,6 @@ E-commerce/
 │   └── vite.config.js
 └── README.md
 ```
-
-## 📸 Preview
-
-![Preview](./Screenshot.png)
 
 ## 📝 License
 
