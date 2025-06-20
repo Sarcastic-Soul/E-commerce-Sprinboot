@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* For improved animation performance */
+* {
+    backface-visibility: hidden;
+}
+
+/* Optional: Improve scrolling performance */
+.scroll-smooth {
+    scroll-behavior: smooth;
+}
+
+/* Animation for sliding cart */
+.translate-x-full {
+    transform: translateX(100%);
+}
+
+.translate-x-0 {
+    transform: translateX(0);
+}
