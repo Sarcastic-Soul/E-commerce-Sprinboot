@@ -139,18 +139,9 @@ E-commerce/
 └── README.md
 ```
 
-## 🧪 To-Do / Future Improvements
-
-- ✅ Image preview before upload
-- ✅ Upload validation (max file size)
-- ✅ Toast messages for cart/auth events
-- ⏳ Payment gateway integration
-- ⏳ Admin order dashboard
-- ⏳ Image optimization (external CDN or caching)
-
 ## 📸 Preview
 
-![Preview](https://picsum.photos/seed/neo/900/300)
+![Preview](./Screenshot.png)
 
 ## 📝 License
 
