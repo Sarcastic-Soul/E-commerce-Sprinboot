@@ -5,11 +5,13 @@ import {useNavigate} from "react-router-dom";
 import { useTheme } from '../context/ThemeContext';
 import {toast} from "sonner";
 import api from "../api/axios.js";
+import {useCart} from "../context/CartContext.jsx";
 
 export default function ProductCard({ product, onClick }) {
     const { user } = useAuth();
     const { darkMode } = useTheme();
     const navigate = useNavigate();
+    const { setCartItemCount } = useCart();
 
     const imageUrl = product.imageUrl ? product.imageUrl.toString() : 'https://picsum.photos/400';
 
@@ -27,8 +29,12 @@ export default function ProductCard({ product, onClick }) {
                 },
             });
 
+            const updatedCart = response.data;
+            console.log(updatedCart);
+            const totalCount = updatedCart.reduce((acc, item) => acc + item.quantity, 0);
+            setCartItemCount(totalCount);
             toast.success("Item added to cart!");
-            return response.data;
+            return updatedCart;
         } catch (error) {
             console.error("Failed to add to cart:", error);
             toast.error("Failed to add to cart.");

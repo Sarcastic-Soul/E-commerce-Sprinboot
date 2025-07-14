@@ -1,7 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import Navbar from './components/Navbar';
+import {Navbar} from './components/Navbar';
 import ProductGrid from './components/ProductGrid';
 import ProductDetailPage from './pages/ProductDetailPage';
 import LoadingState from './components/LoadingState';
@@ -18,6 +18,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import ToastProvider from './components/ToastProvider';
 import api from './api/axios';
+import {CartProvider} from "./context/CartContext.jsx";
 
 function InnerApp() {
     const [products, setProducts] = useState([]);
@@ -114,10 +115,12 @@ export default function App() {
     return (
         <AuthProvider>
             <ThemeProvider>
-                <Router>
-                    <ToastProvider />
-                    <InnerApp />
-                </Router>
+                <CartProvider>
+                    <Router>
+                        <ToastProvider />
+                        <InnerApp />
+                    </Router>
+                </CartProvider>
             </ThemeProvider>
         </AuthProvider>
     );

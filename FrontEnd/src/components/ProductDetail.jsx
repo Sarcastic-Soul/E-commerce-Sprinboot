@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'sonner';
+import {useCart} from "../context/CartContext.jsx";
 
 // src/components/ProductDetail.jsx
 export default function ProductDetail({ product }) {
@@ -14,7 +15,7 @@ export default function ProductDetail({ product }) {
     const imageUrl = product.imageUrl ? product.imageUrl.toString() : 'https://picsum.photos/400';
     const createdAtDate = new Date(product.createdAt);
     const formattedCreatedAtDate = `${String(createdAtDate.getDate()).padStart(2, '0')}-${String(createdAtDate.getMonth() + 1).padStart(2, '0')}-${createdAtDate.getFullYear()}`;
-
+    const { setCartItemCount } = useCart();
     const handleDelete = async () => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
 
@@ -42,8 +43,12 @@ export default function ProductDetail({ product }) {
                 },
             });
 
+            const updatedCart = response.data;
+            console.log(updatedCart);
+            const totalCount = updatedCart.reduce((acc, item) => acc + item.quantity, 0);
+            setCartItemCount(totalCount);
             toast.success("Item added to cart!");
-            return response.data;
+            return updatedCart;
         } catch (error) {
             console.error("Failed to add to cart:", error);
             toast.error("Failed to add to cart.");

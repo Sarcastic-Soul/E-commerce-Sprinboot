@@ -5,16 +5,17 @@ import { Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { useTheme } from '../context/ThemeContext';
+import {useCart} from "../context/CartContext.jsx";
 
-export default function Navbar({
-                                   cartItemCount,
-                                   setShowCart,
-                                   onSearchResults
-                               }) {
+export function Navbar({
+                           setShowCart,
+                           onSearchResults
+                       }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedTerm, setDebouncedTerm] = useState('');
-    const { user, logout } = useAuth();
-    const { darkMode, toggleDarkMode } = useTheme();
+    const {user, logout} = useAuth();
+    const {darkMode, toggleDarkMode} = useTheme();
+    const {cartItemCount} = useCart();
 
     useEffect(() => {
         const handler = setTimeout(() => setDebouncedTerm(searchTerm), 500);
@@ -28,7 +29,7 @@ export default function Navbar({
                     debouncedTerm.trim() === ''
                         ? '/products'
                         : `/products/search?keyword=${debouncedTerm}`;
-                const { data } = await api.get(url);
+                const {data} = await api.get(url);
                 onSearchResults(data);
             } catch (error) {
                 console.error('Search error:', error);
@@ -45,7 +46,9 @@ export default function Navbar({
                 </h1>
 
                 <div className="relative">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? 'text-white' : 'text-black'}`} size={18} />
+                    <Search
+                        className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? 'text-white' : 'text-black'}`}
+                        size={18}/>
                     <input
                         type="text"
                         placeholder="Search products..."
@@ -63,7 +66,7 @@ export default function Navbar({
                             to="/add-product"
                             className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition-all duration-300"
                         >
-                            <Plus size={20} />
+                            <Plus size={20}/>
                             Add Product
                         </Link>
                     )}
@@ -72,16 +75,17 @@ export default function Navbar({
                         onClick={toggleDarkMode}
                         className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-900'} hover:bg-opacity-80 transition-all duration-300`}
                     >
-                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                        {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
                     </button>
 
                     <button
                         onClick={() => setShowCart(true)}
                         className="relative p-2 rounded-lg bg-rose-600 hover:bg-rose-700 transition-all duration-300"
                     >
-                        <ShoppingCart size={20} />
+                        <ShoppingCart size={20}/>
                         {cartItemCount > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full border-2 border-black">
+                            <span
+                                className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full border-2 border-black">
                 {cartItemCount}
               </span>
                         )}
@@ -103,7 +107,7 @@ export default function Navbar({
                                 title="Logout"
                                 className="flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-red-600 bg-red-500 hover:bg-red-600 transition"
                             >
-                                <LogOut size={18} />
+                                <LogOut size={18}/>
                                 Logout
                             </button>
                         </div>

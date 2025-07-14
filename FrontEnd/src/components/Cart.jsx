@@ -4,11 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { toast } from 'sonner';
+import {useCart} from "../context/CartContext.jsx";
 
 export default function Cart({ closeCart }) {
     const { darkMode } = useTheme();
     const { user } = useAuth();
     const cartRef = useRef(null);
+    const { setCartItemCount } = useCart();
 
     const [cartItems, setCartItems] = useState([]);
     const [cartTotal, setCartTotal] = useState(0);
@@ -50,6 +52,8 @@ export default function Cart({ closeCart }) {
             const res = await api.delete(`/cart/${user.username}/remove`, { params: { productId } });
             setCartItems(res.data);
             calculateTotal(res.data);
+            const totalCount = res.data.reduce((acc, item) => acc + item.quantity, 0);
+            setCartItemCount(totalCount);
         } catch (err) {
             toast.error("Failed to remove item");
         }
@@ -60,6 +64,7 @@ export default function Cart({ closeCart }) {
             await api.delete(`/cart/${user.username}/clear`);
             setCartItems([]);
             setCartTotal(0);
+            setCartItemCount(0);
         } catch (err) {
             toast.error("Failed to clear cart");
         }
