@@ -4,12 +4,7 @@ import java.math.BigDecimal;
 // import java.sql.Date;
 import java.util.Date;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,16 +22,30 @@ public class Product {
     private String description;
     private String brand;
     private BigDecimal price;
-    private String category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductCategory category;
+
 
     @Column(name = "created_at")
     private Date createdAt;
 
     private boolean available;
     private int quantity;
+    private String imageUrl;
 
-    private String imageName;
-    private String imageType;
-    @Lob
-    private byte[] imageData;
+
+    public enum ProductCategory {
+        ELECTRONICS,
+        FASHION,
+        HOME_KITCHEN,
+        BEAUTY_PERSONAL_CARE,
+        BOOKS_STATIONERY,
+        HEALTH_WELLNESS,
+        TOYS_GAMES,
+        SPORTS_OUTDOORS,
+        AUTOMOTIVE,
+        GROCERIES_GOURMET_FOOD
+    }
 }

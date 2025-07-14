@@ -1,12 +1,11 @@
 package com.anish.e_commerce.service;
 
-import java.util.List;
 import java.io.IOException;
-import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.repo.ProductRepo;
@@ -17,6 +16,9 @@ public class ProductService {
     @Autowired
     private ProductRepo productRepo;
 
+    @Autowired
+    private ImageHandleService imageHandleService;
+
     public List<Product> getAllProducts() {
         return productRepo.findAll();
     }
@@ -25,56 +27,45 @@ public class ProductService {
         return productRepo.findById(id).orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
-    public Product addProduct(Product product, MultipartFile image) throws Exception {
-        product.setImageName(image.getOriginalFilename());
-        product.setImageType(image.getContentType());
-        product.setCreatedAt(new Date()); // Set current date and time
-
-        try {
-            product.setImageData(image.getBytes());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to store image data: " + e.getMessage());
-        }
-
+    public Product addProduct(Product product) throws IOException {
         return productRepo.save(product);
     }
 
-    public Product updateProduct(int id, Product updatedProduct, MultipartFile image) {
-        Product existingProduct = productRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+    public Product updateProduct(Product updatedProduct) throws IOException {
+        Product existing = productRepo.findById(updatedProduct.getId()).orElseThrow(() -> new RuntimeException("Product not found with id: " + updatedProduct.getId()));
 
-        // Update product fields
-        existingProduct.setName(updatedProduct.getName());
-        existingProduct.setDescription(updatedProduct.getDescription());
-        existingProduct.setBrand(updatedProduct.getBrand());
-        existingProduct.setPrice(updatedProduct.getPrice());
-        existingProduct.setCategory(updatedProduct.getCategory());
-//        existingProduct.setAvailable(updatedProduct.getAvailable());
-        existingProduct.setQuantity(updatedProduct.getQuantity());
+        existing.setName(updatedProduct.getName());
+        existing.setDescription(updatedProduct.getDescription());
+        existing.setBrand(updatedProduct.getBrand());
+        existing.setPrice(updatedProduct.getPrice());
+        existing.setCategory(updatedProduct.getCategory());
+        existing.setAvailable(updatedProduct.isAvailable());
+        existing.setQuantity(updatedProduct.getQuantity());
 
-        // Update image if provided
-        if (image != null && !image.isEmpty()) {
-            existingProduct.setImageName(image.getOriginalFilename());
-            existingProduct.setImageType(image.getContentType());
-            try {
-                existingProduct.setImageData(image.getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to update image data: " + e.getMessage());
-            }
+        if(!updatedProduct.isAvailable()){
+            existing.setQuantity(0);
+        }
+        if (existing.getImageUrl() != null &&
+                !Objects.equals(existing.getImageUrl(), updatedProduct.getImageUrl())) {
+            imageHandleService.deleteImageByUrl(existing.getImageUrl());
+        }
+        if (updatedProduct.getImageUrl() != null) {
+            existing.setImageUrl(updatedProduct.getImageUrl());
         }
 
-        // Preserve original creation date
-        existingProduct.setCreatedAt(existingProduct.getCreatedAt());
-
-        return productRepo.save(existingProduct);
+        return productRepo.save(existing);
     }
 
     public void deleteProduct(int id) {
+        Product existing = productRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        if (existing.getImageUrl() != null) {
+            imageHandleService.deleteImageByUrl(existing.getImageUrl());
+        }
         productRepo.deleteById(id);
     }
 
-    public List<Product> searchProducts(String Keyword) {
-        return productRepo.searchProducts(Keyword);
+    public List<Product> searchProducts(String keyword) {
+        return productRepo.searchProducts(keyword);
     }
-
 }

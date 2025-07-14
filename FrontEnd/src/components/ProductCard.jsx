@@ -4,18 +4,39 @@ import { useAuth } from '../context/AuthContext';
 import {useNavigate} from "react-router-dom";
 import { useTheme } from '../context/ThemeContext';
 import {toast} from "sonner";
+import api from "../api/axios.js";
 
-export default function ProductCard({ product, onClick, addToCart }) {
+export default function ProductCard({ product, onClick }) {
     const { user } = useAuth();
     const { darkMode } = useTheme();
     const navigate = useNavigate();
-    const imageUrl = product.imageData
-        ? `data:image/jpeg;base64,${product.imageData}`
-        : 'https://picsum.photos/400';
+
+    const imageUrl = product.imageUrl ? product.imageUrl.toString() : 'https://picsum.photos/400';
+
+    const handleAddToCart = async (product) => {
+        try {
+            if (!user?.username) {
+                toast.error("User not found");
+                return;
+            }
+
+            const response = await api.post(`/cart/${user.username}/add`, null, {
+                params: {
+                    productId: product.id,
+                    quantity: 1,
+                },
+            });
+
+            toast.success("Item added to cart!");
+            return response.data;
+        } catch (error) {
+            console.error("Failed to add to cart:", error);
+            toast.error("Failed to add to cart.");
+        }
+    };
 
     return (
         <div
-            // onClick={onClick}
             className={`group relative rounded-lg overflow-hidden transition-all duration-300 transform hover:-translate-y-1 
         ${darkMode ? 'bg-gray-800 shadow-blue-500/20' : 'bg-white shadow-black/30'} 
         shadow-lg border-4 ${darkMode ? 'border-gray-700' : 'border-black'}`}
@@ -63,8 +84,7 @@ export default function ProductCard({ product, onClick, addToCart }) {
                                 toast.error("Login required");
                                 return navigate("/login");
                             }
-                            if (product.available) addToCart(product);
-                            toast.success("Item added to cart");
+                            if (product.available) handleAddToCart(product);
                         }}
                         disabled={!product.available}
                         className={`py-2 px-4 rounded font-bold text-sm cursor-pointer

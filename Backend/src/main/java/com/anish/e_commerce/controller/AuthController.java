@@ -32,11 +32,17 @@ public class AuthController {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(encoder.encode(request.getPassword()));
-        user.setRoles(Set.of("USER"));
-        repo.save(user);
+        // 👉 First user becomes ADMIN, rest are USER
+        if (repo.count() == 0) {
+            user.setRoles(Set.of("ADMIN"));
+        } else {
+            user.setRoles(Set.of("USER"));
+        }
 
+        repo.save(user);
         return ResponseEntity.ok("User registered successfully");
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AuthRequest request) {

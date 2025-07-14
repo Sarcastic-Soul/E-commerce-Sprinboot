@@ -66,7 +66,7 @@ A full-stack Neo-brutalist styled e-commerce web application built with **React 
 
 1. Clone the repo and `cd` into the `Backend` directory:
    ```bash
-   git clone https://github.com/<your-username>/<your-repo>.git
+   git clone https://github.com/Sarcastic-Soul/E-commerce-Sprinboot.git
    cd E-commerce/Backend
    ```
 

@@ -31,11 +31,11 @@ export default function AddProduct() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const maxSize = 2 * 1024 * 1024; // 2MB limit
+        const maxSize = 5 * 1024 * 1024; // 5MB limit
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
         if (file.size > maxSize) {
-            alert(`File size is ${sizeInMB} MB. Please upload a file smaller than 2 MB.`);
+            alert(`File size is ${sizeInMB} MB. Please upload a file smaller than 5 MB.`);
             setImage(null);
             setPreview(null);
             setFileSize(null);
@@ -50,48 +50,48 @@ export default function AddProduct() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting) return;
-
         setIsSubmitting(true);
 
         try {
-            const formData = new FormData();
+            let imageUrl = null;
 
-            // Create JSON blob for product data
-            const productBlob = new Blob(
-                [JSON.stringify(product)],
-                { type: "application/json" }
-            );
+            if (image) {
+                const formData = new FormData();
+                formData.append("image", image);
 
-            formData.append("product", productBlob);
-            formData.append("image", image);
-
-            const response = await api.post("/product", formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            if (response.ok) {
-                alert("Product added successfully!");
-                // Reset form
-                setProduct({
-                    name: "",
-                    description: "",
-                    brand: "",
-                    price: "",
-                    category: "",
-                    available: false,
-                    quantity: "",
-                    createdAt: "",
+                const imageRes = await api.post("/upload-image", formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                setImage(null);
-                setPreview(null);
-                setFileSize(null);
-            } else {
-                const errorData = await response.json();
-                alert(`Failed to add product: ${errorData.message || response.statusText}`);
+
+                if (imageRes.status === 200) {
+                    imageUrl = imageRes.data;
+                } else {
+                    alert("Image upload failed");
+                    setIsSubmitting(false);
+                    return;
+                }
             }
-        } catch (error) {
-            console.error("Submission error:", error);
-            alert("Something went wrong! Please try again.");
+
+            const productWithImage = {
+                ...product,
+                createdAt: new Date().toISOString(),
+                imageUrl,
+            };
+
+            const response = await api.post("/product", productWithImage);
+            if (response.status === 201) {
+                alert("Product added!");
+                setProduct({
+                    name: "", description: "", brand: "", price: "",
+                    category: "", available: false, quantity: "", createdAt: "",
+                });
+                setImage(null); setPreview(null); setFileSize(null);
+            } else {
+                alert("Failed to add product.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Something went wrong!");
         } finally {
             setIsSubmitting(false);
         }
@@ -107,84 +107,103 @@ export default function AddProduct() {
                     {isSubmitting ? "Adding Product..." : "Add New Product"}
                 </h1>
 
-                <input
-                    type="text"
-                    name="name"
-                    value={product.name}
-                    onChange={handleChange}
-                    placeholder="Product Name"
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
-
-                <textarea
-                    name="description"
-                    value={product.description}
-                    onChange={handleChange}
-                    placeholder="Product Description"
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
-
-                <input
-                    type="text"
-                    name="brand"
-                    value={product.brand}
-                    onChange={handleChange}
-                    placeholder="Brand"
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
-
-                <input
-                    type="number"
-                    name="price"
-                    value={product.price}
-                    onChange={handleChange}
-                    placeholder="Price"
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
-
-                <input
-                    type="text"
-                    name="category"
-                    value={product.category}
-                    onChange={handleChange}
-                    placeholder="Category"
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
-
-                <input
-                    type="date"
-                    name="createdAt"
-                    value={product.createdAt}
-                    onChange={handleChange}
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
-
-                <div className="flex items-center space-x-2">
+                <div>
+                    <label className="block text-black font-semibold mb-2">Product Name</label>
                     <input
-                        type="checkbox"
-                        name="available"
-                        checked={product.available}
+                        type="text"
+                        name="name"
+                        value={product.name}
                         onChange={handleChange}
-                        className="w-5 h-5 border-2 border-black"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        required
                     />
-                    <label className="text-black font-semibold">Available</label>
                 </div>
 
-                <input
-                    type="number"
-                    name="quantity"
-                    value={product.quantity}
-                    onChange={handleChange}
-                    placeholder="Quantity"
-                    className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
-                    required
-                />
+                <div>
+                    <label className="block text-black font-semibold mb-2">Description</label>
+                    <textarea
+                        name="description"
+                        value={product.description}
+                        onChange={handleChange}
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-black font-semibold mb-2">Brand</label>
+                    <input
+                        type="text"
+                        name="brand"
+                        value={product.brand}
+                        onChange={handleChange}
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-black font-semibold mb-2">Price</label>
+                    <input
+                        type="number"
+                        name="price"
+                        value={product.price}
+                        onChange={handleChange}
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-black font-semibold mb-2">Category</label>
+                    <select
+                        name="category"
+                        value={product.category}
+                        onChange={handleChange}
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        required
+                    >
+                        <option value="">Select a category</option>
+                        <option value="ELECTRONICS">Electronics</option>
+                        <option value="FASHION">Fashion</option>
+                        <option value="HOME_KITCHEN">Home & Kitchen</option>
+                        <option value="BEAUTY_PERSONAL_CARE">Beauty & Personal Care</option>
+                        <option value="BOOKS_STATIONERY">Books & Stationery</option>
+                        <option value="HEALTH_WELLNESS">Health & Wellness</option>
+                        <option value="TOYS_GAMES">Toys & Games</option>
+                        <option value="SPORTS_OUTDOORS">Sports & Outdoors</option>
+                        <option value="AUTOMOTIVE">Automotive</option>
+                        <option value="GROCERIES_GOURMET_FOOD">Groceries & Gourmet Food</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block text-black font-semibold mb-2">Available</label>
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            name="available"
+                            checked={product.available}
+                            onChange={handleChange}
+                            className="w-5 h-5 border-2 border-black"
+                        />
+                        <span className="text-black">In Stock</span>
+                    </div>
+                </div>
+
+                {product.available && (
+                    <div>
+                        <label className="block text-black font-semibold mb-2">Quantity</label>
+                        <input
+                            type="number"
+                            name="quantity"
+                            value={product.quantity}
+                            onChange={handleChange}
+                            className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                            required
+                        />
+                    </div>
+                )}
 
                 <div>
                     <label className="block text-black font-semibold mb-2">Upload Image</label>
@@ -200,7 +219,7 @@ export default function AddProduct() {
                             <img
                                 src={preview}
                                 alt="Preview"
-                                className="w-40 h-40 object-cover border-2 border-black rounded-xl"
+                                className="w-full h-64 object-cover border-2 border-black rounded-lg"
                             />
                             <p className="mt-2 text-sm text-gray-700">
                                 File Size: {fileSize} MB
@@ -213,9 +232,9 @@ export default function AddProduct() {
                     type="submit"
                     disabled={isSubmitting}
                     className={`w-full py-3 px-6 font-bold rounded-xl shadow-[4px_4px_0px_0px_black] transition
-                        ${isSubmitting
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-black text-white hover:bg-gray-800"}
+                    ${isSubmitting
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-black text-white hover:bg-gray-800"}
                     `}
                 >
                     {isSubmitting ? "Adding..." : "Add Product"}

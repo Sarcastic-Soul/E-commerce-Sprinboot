@@ -6,14 +6,12 @@ import { useTheme } from '../context/ThemeContext';
 import { toast } from 'sonner';
 
 // src/components/ProductDetail.jsx
-export default function ProductDetail({ product, addToCart }) {
+export default function ProductDetail({ product }) {
     const { darkMode } = useTheme();
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
     const navigate = useNavigate();
-    const imageUrl = product.imageData
-        ? `data:image/jpeg;base64,${product.imageData}`
-        : 'https://picsum.photos/400';
+    const imageUrl = product.imageUrl ? product.imageUrl.toString() : 'https://picsum.photos/400';
     const createdAtDate = new Date(product.createdAt);
     const formattedCreatedAtDate = `${String(createdAtDate.getDate()).padStart(2, '0')}-${String(createdAtDate.getMonth() + 1).padStart(2, '0')}-${createdAtDate.getFullYear()}`;
 
@@ -27,6 +25,28 @@ export default function ProductDetail({ product, addToCart }) {
         } catch (error) {
             console.error('Delete error:', error);
             alert('Something went wrong!');
+        }
+    };
+
+    const handleAddToCart = async (product) => {
+        try {
+            if (!user?.username) {
+                toast.error("User not found");
+                return;
+            }
+
+            const response = await api.post(`/cart/${user.username}/add`, null, {
+                params: {
+                    productId: product.id,
+                    quantity: 1,
+                },
+            });
+
+            toast.success("Item added to cart!");
+            return response.data;
+        } catch (error) {
+            console.error("Failed to add to cart:", error);
+            toast.error("Failed to add to cart.");
         }
     };
 
@@ -87,8 +107,7 @@ export default function ProductDetail({ product, addToCart }) {
                                 toast.error("Login required");
                                 return navigate("/login");
                             }
-                            if (product.available) addToCart(product);
-                            toast.success("Item added to cart");
+                            if (product.available) handleAddToCart(product);
                         }}
                         disabled={!product.available}
                         className={`w-full py-3 px-6 rounded-lg font-bold text-lg flex items-center justify-center gap-2 border-4 border-black transition-colors duration-300 cursor-pointer

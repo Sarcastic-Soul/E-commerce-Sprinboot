@@ -23,7 +23,6 @@ function InnerApp() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [cart, setCart] = useState([]);
     const [showCart, setShowCart] = useState(false);
 
     const { darkMode } = useTheme();
@@ -45,40 +44,6 @@ function InnerApp() {
         fetchProducts();
     }, []);
 
-    const addToCart = (product) => {
-        const existingItem = cart.find((item) => item.id === product.id);
-        if (existingItem) {
-            setCart(
-                cart.map((item) =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-                )
-            );
-        } else {
-            setCart([...cart, { ...product, quantity: 1 }]);
-        }
-    };
-
-    const removeFromCart = (productId) => {
-        setCart(cart.filter((item) => item.id !== productId));
-    };
-
-    const updateQuantity = (productId, change) => {
-        setCart(
-            cart.map((item) => {
-                if (item.id === productId) {
-                    const newQuantity = item.quantity + change;
-                    return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
-                }
-                return item;
-            })
-        );
-    };
-
-    const cartTotal = cart.reduce(
-        (total, item) => total + item.price * item.quantity,
-        0
-    );
-
     return (
         <div
             className={`min-h-screen transition-colors duration-300 ${
@@ -86,7 +51,6 @@ function InnerApp() {
             }`}
         >
             <Navbar
-                cartItemCount={cart.reduce((count, item) => count + item.quantity, 0)}
                 setShowCart={setShowCart}
                 onSearchResults={setProducts}
             />
@@ -101,13 +65,13 @@ function InnerApp() {
                             ) : error ? (
                                 <ErrorState error={error} />
                             ) : (
-                                <ProductGrid products={products} addToCart={addToCart} />
+                                <ProductGrid products={products}/>
                             )
                         }
                     />
                     <Route
                         path="/product/:id"
-                        element={<ProductDetailPage addToCart={addToCart} />}
+                        element={<ProductDetailPage />}
                     />
                     <Route
                         path="/add-product"
@@ -138,11 +102,7 @@ function InnerApp() {
                         onClick={() => setShowCart(false)}
                     />
                     <Cart
-                        cart={cart}
                         closeCart={() => setShowCart(false)}
-                        removeFromCart={removeFromCart}
-                        updateQuantity={updateQuantity}
-                        cartTotal={cartTotal}
                     />
                 </div>
             )}

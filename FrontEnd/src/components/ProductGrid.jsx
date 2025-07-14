@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ products, addToCart }) {
+export default function ProductGrid({ products }) {
     const navigate = useNavigate();
 
     return (
@@ -14,7 +14,6 @@ export default function ProductGrid({ products, addToCart }) {
                         key={product.id}
                         product={product}
                         onClick={() => navigate(`/product/${product.id}`)}
-                        addToCart={addToCart}
                     />
                 ))}
             </div>
