@@ -16,3 +16,6 @@ backend/mvnw.cmd
 # Ignore frontend build
 /frontend/dist/
 frontend/node_modules/
+
+.env
+.env.production
