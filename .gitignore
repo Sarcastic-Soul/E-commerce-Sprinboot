@@ -19,4 +19,3 @@ frontend/node_modules/
 
 .env
 .env.production
-backend/src/main/resources/application-dev.properties
