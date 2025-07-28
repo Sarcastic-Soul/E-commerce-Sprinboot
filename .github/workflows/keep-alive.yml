@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping the deployed service to keep it alive
-        run: curl -/dev/nus "https://springboot-ecommerce-latest-ctgu.onrender.com/api/products" > ll
+        run: curl -s "https://springboot-ecommerce-latest-ctgu.onrender.com/api/products" > /dev/null
