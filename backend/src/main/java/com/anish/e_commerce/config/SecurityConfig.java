@@ -30,11 +30,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // ✅ enable CORS for Spring Security
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/assets/**").permitAll()
-                        .requestMatchers("/", "/index.html", "/vite.svg").permitAll()
+                        .requestMatchers("/", "/index.html", "/vite.svg", "/assets/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/products/**", "/api/product/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
