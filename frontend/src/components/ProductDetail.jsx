@@ -11,6 +11,7 @@ export default function ProductDetail({ product }) {
     const { darkMode } = useTheme();
     const { user } = useAuth();
     const isAdmin = user?.role === 'ADMIN';
+    console.log(user?.role);
     const navigate = useNavigate();
     const imageUrl = product.imageUrl ? product.imageUrl.toString() : 'https://picsum.photos/400';
     const createdAtDate = new Date(product.createdAt);

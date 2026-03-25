@@ -1,24 +1,25 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import {Navbar} from './components/Navbar';
-import ProductGrid from './components/ProductGrid';
-import ProductDetailPage from './pages/ProductDetailPage';
-import LoadingState from './components/LoadingState';
-import ErrorState from './components/ErrorState';
-import Cart from './components/Cart';
-import AddProduct from './pages/AddProductPage';
-import UpdateProduct from './pages/UpdateProductPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import NotFound from './pages/NotFound';
-import ProtectedRoute from './routes/ProtectedRoute';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navbar } from "./components/Navbar";
+import ProductGrid from "./components/ProductGrid";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import LoadingState from "./components/LoadingState";
+import ErrorState from "./components/ErrorState";
+import Cart from "./components/Cart";
+import AddProduct from "./pages/AddProductPage";
+import UpdateProduct from "./pages/UpdateProductPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
-import ToastProvider from './components/ToastProvider';
-import api from './api/axios';
-import {CartProvider} from "./context/CartContext.jsx";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import ToastProvider from "./components/ToastProvider";
+import api from "./api/axios";
+import { CartProvider } from "./context/CartContext.jsx";
+import OrderHistoryPage from "./pages/OrderHistoryPage.jsx";
 
 function InnerApp() {
     const [products, setProducts] = useState([]);
@@ -32,11 +33,11 @@ function InnerApp() {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                const response = await api.get('/products');
+                const response = await api.get("/products");
                 setProducts(response.data);
                 setError(null);
             } catch (err) {
-                setError('Failed to fetch products. Please try again later.');
+                setError("Failed to fetch products. Please try again later.");
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -48,13 +49,12 @@ function InnerApp() {
     return (
         <div
             className={`min-h-screen transition-colors duration-300 ${
-                darkMode ? 'bg-gray-900 text-white' : 'bg-yellow-50 text-gray-900'
+                darkMode
+                    ? "bg-gray-900 text-white"
+                    : "bg-yellow-50 text-gray-900"
             }`}
         >
-            <Navbar
-                setShowCart={setShowCart}
-                onSearchResults={setProducts}
-            />
+            <Navbar setShowCart={setShowCart} onSearchResults={setProducts} />
 
             <main className="container mx-auto px-4 py-8">
                 <Routes>
@@ -66,7 +66,7 @@ function InnerApp() {
                             ) : error ? (
                                 <ErrorState error={error} />
                             ) : (
-                                <ProductGrid products={products}/>
+                                <ProductGrid products={products} />
                             )
                         }
                     />
@@ -90,6 +90,14 @@ function InnerApp() {
                             </ProtectedRoute>
                         }
                     />
+                    <Route
+                        path="/orders"
+                        element={
+                            <ProtectedRoute>
+                                <OrderHistoryPage />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
                     <Route path="*" element={<NotFound />} />
@@ -102,9 +110,7 @@ function InnerApp() {
                         className="fixed inset-0 backdrop-blur-sm"
                         onClick={() => setShowCart(false)}
                     />
-                    <Cart
-                        closeCart={() => setShowCart(false)}
-                    />
+                    <Cart closeCart={() => setShowCart(false)} />
                 </div>
             )}
         </div>
