@@ -1,7 +1,7 @@
 // src/pages/AddProduct.jsx
 
 import { useState } from "react";
-import api from '../api/axios';
+import api from "../api/axios";
 
 export default function AddProduct() {
     const [product, setProduct] = useState({
@@ -21,9 +21,9 @@ export default function AddProduct() {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setProduct(prev => ({
+        setProduct((prev) => ({
             ...prev,
-            [name]: type === "checkbox" ? checked : value
+            [name]: type === "checkbox" ? checked : value,
         }));
     };
 
@@ -35,7 +35,9 @@ export default function AddProduct() {
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
         if (file.size > maxSize) {
-            alert(`File size is ${sizeInMB} MB. Please upload a file smaller than 5 MB.`);
+            alert(
+                `File size is ${sizeInMB} MB. Please upload a file smaller than 5 MB.`,
+            );
             setImage(null);
             setPreview(null);
             setFileSize(null);
@@ -60,7 +62,7 @@ export default function AddProduct() {
                 formData.append("image", image);
 
                 const imageRes = await api.post("/upload-image", formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
+                    headers: { "Content-Type": "multipart/form-data" },
                 });
 
                 if (imageRes.status === 200) {
@@ -82,10 +84,18 @@ export default function AddProduct() {
             if (response.status === 201) {
                 alert("Product added!");
                 setProduct({
-                    name: "", description: "", brand: "", price: "",
-                    category: "", available: false, quantity: "", createdAt: "",
+                    name: "",
+                    description: "",
+                    brand: "",
+                    price: "",
+                    category: "",
+                    available: false,
+                    quantity: "",
+                    createdAt: "",
                 });
-                setImage(null); setPreview(null); setFileSize(null);
+                setImage(null);
+                setPreview(null);
+                setFileSize(null);
             } else {
                 alert("Failed to add product.");
             }
@@ -108,7 +118,9 @@ export default function AddProduct() {
                 </h1>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Product Name</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Product Name
+                    </label>
                     <input
                         type="text"
                         name="name"
@@ -120,7 +132,9 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Description</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Description
+                    </label>
                     <textarea
                         name="description"
                         value={product.description}
@@ -131,7 +145,9 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Brand</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Brand
+                    </label>
                     <input
                         type="text"
                         name="brand"
@@ -143,7 +159,9 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Price</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Price
+                    </label>
                     <input
                         type="number"
                         name="price"
@@ -155,7 +173,9 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Category</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Category
+                    </label>
                     <select
                         name="category"
                         value={product.category}
@@ -167,18 +187,30 @@ export default function AddProduct() {
                         <option value="ELECTRONICS">Electronics</option>
                         <option value="FASHION">Fashion</option>
                         <option value="HOME_KITCHEN">Home & Kitchen</option>
-                        <option value="BEAUTY_PERSONAL_CARE">Beauty & Personal Care</option>
-                        <option value="BOOKS_STATIONERY">Books & Stationery</option>
-                        <option value="HEALTH_WELLNESS">Health & Wellness</option>
+                        <option value="BEAUTY_PERSONAL_CARE">
+                            Beauty & Personal Care
+                        </option>
+                        <option value="BOOKS_STATIONERY">
+                            Books & Stationery
+                        </option>
+                        <option value="HEALTH_WELLNESS">
+                            Health & Wellness
+                        </option>
                         <option value="TOYS_GAMES">Toys & Games</option>
-                        <option value="SPORTS_OUTDOORS">Sports & Outdoors</option>
+                        <option value="SPORTS_OUTDOORS">
+                            Sports & Outdoors
+                        </option>
                         <option value="AUTOMOTIVE">Automotive</option>
-                        <option value="GROCERIES_GOURMET_FOOD">Groceries & Gourmet Food</option>
+                        <option value="GROCERIES_GOURMET_FOOD">
+                            Groceries & Gourmet Food
+                        </option>
                     </select>
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Available</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Available
+                    </label>
                     <div className="flex items-center space-x-2">
                         <input
                             type="checkbox"
@@ -193,12 +225,15 @@ export default function AddProduct() {
 
                 {product.available && (
                     <div>
-                        <label className="block text-black font-semibold mb-2">Quantity</label>
+                        <label className="block text-black font-semibold mb-2">
+                            Quantity
+                        </label>
                         <input
                             type="number"
                             name="quantity"
                             value={product.quantity}
                             onChange={handleChange}
+                            min="0"
                             className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
                             required
                         />
@@ -206,7 +241,9 @@ export default function AddProduct() {
                 )}
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">Upload Image</label>
+                    <label className="block text-black font-semibold mb-2">
+                        Upload Image
+                    </label>
                     <input
                         type="file"
                         onChange={handleImageChange}
@@ -232,9 +269,11 @@ export default function AddProduct() {
                     type="submit"
                     disabled={isSubmitting}
                     className={`w-full py-3 px-6 font-bold rounded-xl shadow-[4px_4px_0px_0px_black] transition
-                    ${isSubmitting
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-black text-white hover:bg-gray-800"}
+                    ${
+                        isSubmitting
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-black text-white hover:bg-gray-800"
+                    }
                     `}
                 >
                     {isSubmitting ? "Adding..." : "Add Product"}

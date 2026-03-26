@@ -21,6 +21,7 @@ import api from "./api/axios";
 import { CartProvider } from "./context/CartContext.jsx";
 import OrderHistoryPage from "./pages/OrderHistoryPage.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import WishlistPage from "./pages/WishlistPage.jsx";
 
 function InnerApp() {
     const [products, setProducts] = useState([]);
@@ -82,6 +83,7 @@ function InnerApp() {
                                 <AddProduct />
                             </ProtectedRoute>
                         }
+                        z
                     />
                     <Route
                         path="/update-product/:id"
@@ -104,6 +106,14 @@ function InnerApp() {
                         element={
                             <ProtectedRoute role="ADMIN">
                                 <AdminDashboard />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/wishlist"
+                        element={
+                            <ProtectedRoute>
+                                <WishlistPage />
                             </ProtectedRoute>
                         }
                     />

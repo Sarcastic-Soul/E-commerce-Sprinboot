@@ -9,6 +9,7 @@ import {
     X,
     History,
     LayoutDashboard,
+    Heart,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -16,6 +17,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext.jsx";
+import NotificationBell from "./NotificationBell";
 
 export function Navbar({ setShowCart, onSearchResults }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -141,20 +143,31 @@ export function Navbar({ setShowCart, onSearchResults }) {
                             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
 
-                        {/* NEW: Order History Button (Only shown if logged in) */}
                         {user && (
-                            <Link
-                                to="/orders"
-                                className="p-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-300"
-                                title="Order History"
-                            >
-                                <History size={20} />
-                            </Link>
+                            <>
+                                <NotificationBell />
+                                <Link
+                                    to="/wishlist"
+                                    className="p-2 rounded-lg border-2 border-red-500 bg-red-500 hover:bg-red-600 transition-all duration-300"
+                                    title="My Wishlist"
+                                >
+                                    <Heart size={20} />
+                                </Link>
+
+                                <Link
+                                    to="/orders"
+                                    className="p-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-300"
+                                    title="Order History"
+                                >
+                                    <History size={20} />
+                                </Link>
+                            </>
                         )}
 
                         <button
                             onClick={() => setShowCart(true)}
                             className="relative p-2 rounded-lg bg-rose-600 hover:bg-rose-700 transition-all duration-300"
+                            title="Shopping Cart"
                         >
                             <ShoppingCart size={20} />
                             {cartItemCount > 0 && (

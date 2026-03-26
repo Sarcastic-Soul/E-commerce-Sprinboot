@@ -2,7 +2,7 @@ package com.anish.e_commerce.service;
 
 import com.anish.e_commerce.model.*;
 import com.anish.e_commerce.repo.OrderRepo;
-import com.anish.e_commerce.repo.UserRepo;
+import com.anish.e_commerce.repo.ProductRepo;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,8 +15,8 @@ import org.springframework.stereotype.Service;
 public class OrderService {
 
     private final OrderRepo orderRepo;
+    private final ProductRepo productRepo;
     private final CartService cartService;
-    private final UserRepo userRepo;
 
     @Transactional
     public Order placeOrder(String username) {
@@ -33,24 +33,25 @@ public class OrderService {
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
-        for (CartItem cartItem : cart.getItems()) {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getQuantity());
+        for (CartItem item : cart.getItems()) {
+            Product product = item.getProduct();
 
-            BigDecimal itemPrice = cartItem.getProduct().getPrice();
-            orderItem.setPriceAtPurchase(itemPrice);
+            if (product.getQuantity() < item.getQuantity()) {
+                throw new RuntimeException(
+                    "Sorry, " +
+                        product.getName() +
+                        " does not have enough stock."
+                );
+            }
 
-            // Calculate item total: price * quantity
-            BigDecimal itemTotal = itemPrice.multiply(
-                BigDecimal.valueOf(cartItem.getQuantity())
-            );
+            int newQuantity = product.getQuantity() - item.getQuantity();
+            product.setQuantity(newQuantity);
 
-            // Add to grand total
-            totalAmount = totalAmount.add(itemTotal);
+            if (newQuantity == 0) {
+                product.setAvailable(false);
+            }
 
-            order.getItems().add(orderItem);
+            productRepo.save(product);
         }
 
         order.setTotalAmount(totalAmount);
