@@ -1,28 +1,39 @@
-# Step 1: Build React frontend
-FROM node:22.17.1-slim AS frontend-builder
+# ==========================================
+# Stage 1: Build Frontend (React/Vite)
+# ==========================================
+FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
-COPY ./frontend/ ./
+
+# Install dependencies and build
+COPY frontend/package*.json ./
 RUN npm install
+COPY frontend/ ./
+# Output goes to /app/frontend/dist
 RUN npm run build
 
-# Step 2: Build Spring Boot backend
-FROM maven:3.9.6-eclipse-temurin-21 AS backend-builder
+# ==========================================
+# Stage 2: Build Backend (Spring Boot)
+# ==========================================
+FROM maven:3.9.6-eclipse-temurin-21 AS backend-build
 WORKDIR /app/backend
-COPY ./backend/ ./
+
+COPY backend/pom.xml ./
+COPY backend/src ./src
+
+# MAGIC TRICK: Copy the React build into Spring Boot's static folder BEFORE packaging
+COPY --from=frontend-build /app/frontend/dist ./src/main/resources/static/
+
+# Package the JAR
 RUN mvn clean package -DskipTests
 
-# Step 3: Final Image with JAR and Static Files
-FROM openjdk:21-jdk-slim
+# ==========================================
+# Stage 3: Production Runtime
+# ==========================================
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Copy Spring Boot JAR
-COPY --from=backend-builder /app/backend/target/*.jar app.jar
-
-# Copy frontend build into Spring Boot's static resources
-COPY --from=frontend-builder /app/frontend/dist /app/public
-
-# Optional: if using Spring Boot to serve frontend
-ENV SPRING_RESOURCES_STATIC_LOCATIONS=file:/app/public/
+# Copy the final "Fat JAR"
+COPY --from=backend-build /app/backend/target/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
