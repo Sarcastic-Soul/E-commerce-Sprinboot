@@ -4,7 +4,6 @@ import com.anish.e_commerce.model.User;
 import com.anish.e_commerce.repo.UserRepo;
 import com.anish.e_commerce.jwt.JwtUtil;
 import lombok.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.AuthenticationException;

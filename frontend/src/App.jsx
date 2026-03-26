@@ -20,6 +20,7 @@ import ToastProvider from "./components/ToastProvider";
 import api from "./api/axios";
 import { CartProvider } from "./context/CartContext.jsx";
 import OrderHistoryPage from "./pages/OrderHistoryPage.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 
 function InnerApp() {
     const [products, setProducts] = useState([]);
@@ -95,6 +96,14 @@ function InnerApp() {
                         element={
                             <ProtectedRoute>
                                 <OrderHistoryPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin/dashboard"
+                        element={
+                            <ProtectedRoute role="ADMIN">
+                                <AdminDashboard />
                             </ProtectedRoute>
                         }
                     />

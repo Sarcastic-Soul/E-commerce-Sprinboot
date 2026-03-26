@@ -1,14 +1,14 @@
 package com.anish.e_commerce.service;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.repo.ProductRepo;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ProductService {
@@ -24,7 +24,33 @@ public class ProductService {
     }
 
     public Product getProductById(int id) {
-        return productRepo.findById(id).orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        return productRepo
+            .findById(id)
+            .orElseThrow(() ->
+                new RuntimeException("Product not found with id: " + id)
+            );
+    }
+
+    public List<Product> getFilteredProducts(
+        String keyword,
+        Product.ProductCategory category,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Boolean available,
+        String sortDir
+    ) {
+        Sort sort = "desc".equalsIgnoreCase(sortDir)
+            ? Sort.by("price").descending()
+            : Sort.by("price").ascending();
+
+        return productRepo.filterProducts(
+            keyword,
+            category,
+            minPrice,
+            maxPrice,
+            available,
+            sort
+        );
     }
 
     public Product addProduct(Product product) throws IOException {
@@ -32,7 +58,13 @@ public class ProductService {
     }
 
     public Product updateProduct(Product updatedProduct) throws IOException {
-        Product existing = productRepo.findById(updatedProduct.getId()).orElseThrow(() -> new RuntimeException("Product not found with id: " + updatedProduct.getId()));
+        Product existing = productRepo
+            .findById(updatedProduct.getId())
+            .orElseThrow(() ->
+                new RuntimeException(
+                    "Product not found with id: " + updatedProduct.getId()
+                )
+            );
 
         existing.setName(updatedProduct.getName());
         existing.setDescription(updatedProduct.getDescription());
@@ -42,11 +74,16 @@ public class ProductService {
         existing.setAvailable(updatedProduct.isAvailable());
         existing.setQuantity(updatedProduct.getQuantity());
 
-        if(!updatedProduct.isAvailable()){
+        if (!updatedProduct.isAvailable()) {
             existing.setQuantity(0);
         }
-        if (existing.getImageUrl() != null &&
-                !Objects.equals(existing.getImageUrl(), updatedProduct.getImageUrl())) {
+        if (
+            existing.getImageUrl() != null &&
+            !Objects.equals(
+                existing.getImageUrl(),
+                updatedProduct.getImageUrl()
+            )
+        ) {
             imageHandleService.deleteImageByUrl(existing.getImageUrl());
         }
         if (updatedProduct.getImageUrl() != null) {
@@ -57,8 +94,11 @@ public class ProductService {
     }
 
     public void deleteProduct(int id) {
-        Product existing = productRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        Product existing = productRepo
+            .findById(id)
+            .orElseThrow(() ->
+                new RuntimeException("Product not found with id: " + id)
+            );
         if (existing.getImageUrl() != null) {
             imageHandleService.deleteImageByUrl(existing.getImageUrl());
         }

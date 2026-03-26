@@ -1,7 +1,6 @@
 package com.anish.e_commerce.controller;
 
 import com.anish.e_commerce.dto.CartItemResponse;
-import com.anish.e_commerce.model.Cart;
 import com.anish.e_commerce.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
