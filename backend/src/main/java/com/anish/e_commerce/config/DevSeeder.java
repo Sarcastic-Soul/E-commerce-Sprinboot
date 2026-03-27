@@ -10,12 +10,14 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class DevSeeder implements CommandLineRunner {
 
     private final ProductRepo productRepo;
@@ -47,7 +49,7 @@ public class DevSeeder implements CommandLineRunner {
         regularUser.setRoles(Set.of("USER"));
         userRepo.save(regularUser);
 
-        System.out.println("✅ DevSeeder inserted 'admin' and 'user' accounts");
+        log.info("✅ DevSeeder inserted 'admin' and 'user' accounts");
     }
 
     private void seedProducts() {
@@ -293,6 +295,6 @@ public class DevSeeder implements CommandLineRunner {
             )
         );
 
-        System.out.println("✅ DevSeeder inserted 15 products");
+        log.info("✅ DevSeeder inserted 15 products");
     }
 }
