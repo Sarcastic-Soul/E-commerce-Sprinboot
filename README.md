@@ -1,13 +1,13 @@
 # 🛒 BrutShop — Full-Stack E-Commerce Platform
 
-A **Neo-brutalist styled full-stack e-commerce application** built with **React 19 + Vite** and **Spring Boot 3**. It features robust JWT auth, role-based access, an order management system, a wishlist & notification engine, dynamic product filtering, Redis caching, and a beautifully brutal UI.
+A **Neo-brutalist styled full-stack e-commerce application** built with **React 19 + Vite** and **Spring Boot 3**. It features robust JWT auth, role-based access, an order management system, a wishlist & notification engine, dynamic product filtering, server-side pagination, Redis caching, API rate limiting, and a beautifully brutal UI.
 
 ## 🌐 Live Demo & Access
 
 Just want to see the app in action?
 
-- **🔗 Live Website:** https://springboot-ecommerce-latest-ctgu.onrender.com/
-- **📺 Demo Video:** [Link to your YouTube/Loom video]
+  - **🔗 Live Website:** [https://springboot-ecommerce-latest-ctgu.onrender.com/](https://springboot-ecommerce-latest-ctgu.onrender.com/)
+  - **📺 Demo Video:** [Link to your YouTube/Loom video]
 
 > ⚠️ **HEADS UP:** This project is hosted on Render's free tier. If the site hasn't received traffic in a while, the server goes to sleep. **It may take 2-5 minutes to spin up on your first visit.** If it seems stuck loading, just give it a minute\! Alternatively, check out the demo video above to see its performance.
 
@@ -22,7 +22,7 @@ You can log in and test the features using these pre-configured accounts:
 
 ## 📸 Preview
 
-![Preview](./Screenshot.png) 
+![Preview](./Screenshot.png)  
 
 ## 🔧 Tech Stack
 
@@ -39,6 +39,7 @@ You can log in and test the features using these pre-configured accounts:
 
   - **Spring Boot 3** (Java 21)
   - **Spring Security + JWT** (Role-based authorization: `USER`, `ADMIN`)
+  - **Bucket4j** (IP-based API Rate Limiting)
   - **PostgreSQL** (Local pgAdmin for Dev, NeonDB for Prod)
   - **Redis** for high-performance API caching
   - **Cloudinary** for image uploads
@@ -58,9 +59,11 @@ You can log in and test the features using these pre-configured accounts:
 
   - JWT-based login/signup with auto-login and session management.
   - Role-based protected routes (`ADMIN` vs `USER`).
+  - **API Rate Limiting:** Public endpoints (like login and product discovery) are protected by Bucket4j token-bucket algorithms to prevent bot scraping and brute-force attacks.
 
 ### 🛍 Products & Discovery
 
+  - **Server-Side Pagination:** Efficiently browse large catalogs with Spring Data `Pageable` and custom neo-brutalist frontend controls.
   - Product grid with **Debounced Search** and **Redis Caching** for instant load times.
   - **Dynamic Brutalist Filter Drawer** (Filter by Category, Price Range, and Sorting).
   - **Wishlist System:** Users can save products, triggering instant UI updates.
@@ -159,7 +162,7 @@ Go to the **Actions** tab in GitHub to watch it build and push the image to Dock
 
 ### Step 3: Deploy on Render
 
-1.  Create an account on [Render](https://www.google.com/search?q=https://render.com/) and [NeonDB](https://www.google.com/search?q=https://neon.tech/).
+1.  Create an account on Render and NeonDB.
 2.  In Render, click **New +** -\> **Web Service** -\> **Deploy an existing image from a registry**.
 3.  Enter your Docker Hub image URL (e.g., `docker.io/yourusername/brutshop-fullstack:latest`).
 4.  Set the **Environment Variables** in Render:
@@ -180,7 +183,7 @@ Go to the **Actions** tab in GitHub to watch it build and push the image to Dock
 
 ## 🧪 Running Tests
 
-  - **Backend:** Run `./mvnw test` in the `/backend` directory.
+  - **Backend:** Run `./mvnw test` in the `/backend` directory to execute the JUnit 5 and Mockito test suites (Services, Security, and Rate Limiting).
   - **Frontend:** Run `npm run test` in the `/frontend` directory.
 
 ## 📝 License
