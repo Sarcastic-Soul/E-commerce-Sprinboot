@@ -10,6 +10,7 @@ import com.anish.e_commerce.repo.WishlistRepo;
 import com.anish.e_commerce.service.NotificationService;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Map; // Added Map import
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,24 +33,26 @@ public class UserController {
 
     @Transactional
     @PostMapping("/wishlist/{productId}")
-    public ResponseEntity<String> toggleWishlist(
+    public ResponseEntity<?> toggleWishlist(
         @PathVariable int productId,
         Authentication auth
     ) {
         User user = getCurrentUser(auth);
 
         if (wishlistRepo.existsByUserIdAndProductId(user.getId(), productId)) {
-            // If it exists, remove it (toggle off)
             wishlistRepo.deleteByUserIdAndProductId(user.getId(), productId);
-            return ResponseEntity.ok("Removed from wishlist");
+            return ResponseEntity.ok(
+                Map.of("message", "Removed from wishlist")
+            );
         } else {
-            // If it doesn't exist, add it (toggle on)
-            Product product = productRepo.findById(productId).orElseThrow();
+            Product product = productRepo
+                .findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
             Wishlist wishlist = new Wishlist();
             wishlist.setUser(user);
             wishlist.setProduct(product);
             wishlistRepo.save(wishlist);
-            return ResponseEntity.ok("Added to wishlist");
+            return ResponseEntity.ok(Map.of("message", "Added to wishlist"));
         }
     }
 

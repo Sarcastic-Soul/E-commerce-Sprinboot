@@ -1,9 +1,12 @@
 package com.anish.e_commerce.controller;
 
+import com.anish.e_commerce.dto.ProductDTO;
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.service.ImageHandleService;
 import com.anish.e_commerce.service.ProductService;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -63,22 +66,51 @@ public class ProductController {
 
     @PostMapping("/product")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addProduct(@RequestBody Product product) {
+    public ResponseEntity<?> addProduct(
+        @Valid @RequestBody ProductDTO productDto
+    ) {
         try {
+            // Map DTO to Entity
+            Product product = new Product();
+            product.setName(productDto.getName());
+            product.setDescription(productDto.getDescription());
+            product.setBrand(productDto.getBrand());
+            product.setPrice(productDto.getPrice());
+            product.setCategory(productDto.getCategory());
+            product.setAvailable(productDto.isAvailable());
+            product.setQuantity(productDto.getQuantity());
+            product.setImageUrl(productDto.getImageUrl());
+            product.setCreatedAt(new Date()); // Set creation date
+
             return ResponseEntity.status(HttpStatus.CREATED).body(
                 productService.addProduct(product)
             );
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                "Failed to add product"
+                "Failed to add product: " + e.getMessage()
             );
         }
     }
 
     @PutMapping("/product/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateProduct(@RequestBody Product product) {
+    public ResponseEntity<?> updateProduct(
+        @PathVariable int id,
+        @Valid @RequestBody ProductDTO productDto
+    ) {
         try {
+            // Map DTO to Entity
+            Product product = new Product();
+            product.setId(id); // Ensure the ID is set for the update
+            product.setName(productDto.getName());
+            product.setDescription(productDto.getDescription());
+            product.setBrand(productDto.getBrand());
+            product.setPrice(productDto.getPrice());
+            product.setCategory(productDto.getCategory());
+            product.setAvailable(productDto.isAvailable());
+            product.setQuantity(productDto.getQuantity());
+            product.setImageUrl(productDto.getImageUrl());
+
             Product updated = productService.updateProduct(product);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
