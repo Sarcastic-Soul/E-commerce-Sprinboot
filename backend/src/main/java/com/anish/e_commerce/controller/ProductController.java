@@ -6,6 +6,7 @@ import com.anish.e_commerce.service.ProductService;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,8 +22,12 @@ public class ProductController {
     private final ImageHandleService imageHandleService;
 
     @GetMapping("/products")
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<Page<Product>> getAllProducts(
+        @RequestParam(defaultValue = "0") int page, // Default to page 0 (Spring is 0-indexed)
+        @RequestParam(defaultValue = "12") int size // Default to 12 items per page
+    ) {
+        Page<Product> productPage = productService.getAllProducts(page, size);
+        return new ResponseEntity<>(productPage, HttpStatus.OK);
     }
 
     @GetMapping("/product/{id}")

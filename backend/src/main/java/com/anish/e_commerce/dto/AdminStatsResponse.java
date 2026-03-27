@@ -1,5 +1,6 @@
 package com.anish.e_commerce.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.Data;
 
@@ -18,10 +19,12 @@ public class AdminStatsResponse {
 
         private String date;
         private long count;
+        private BigDecimal revenue;
 
-        public DailyOrderStat(String date, long count) {
+        public DailyOrderStat(String date, long count, BigDecimal revenue) {
             this.date = date;
             this.count = count;
+            this.revenue = revenue;
         }
     }
 }

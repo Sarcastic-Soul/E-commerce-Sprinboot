@@ -1,6 +1,7 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react"; // Added Pagination Icons
 import { Navbar } from "./components/Navbar";
 import ProductGrid from "./components/ProductGrid";
 import ProductDetailPage from "./pages/ProductDetailPage";
@@ -29,23 +30,56 @@ function InnerApp() {
     const [error, setError] = useState(null);
     const [showCart, setShowCart] = useState(false);
 
+    // NEW Pagination States
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [isFiltering, setIsFiltering] = useState(false);
+
     const { darkMode } = useTheme();
 
+    const fetchProducts = useCallback(async (page) => {
+        try {
+            setLoading(true);
+            // Request the specific page
+            const response = await api.get(`/products?page=${page}&size=12`);
+
+            // Extract the 'content' array from the Spring Boot Page object
+            console.log(response.data);
+            setProducts(response.data.content || response.data);
+            setTotalPages(response.data.page?.totalPages || 1);
+            setError(null);
+        } catch (err) {
+            setError("Failed to fetch products. Please try again later.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Only fetch paginated defaults if the user is NOT using the Navbar filters
     useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                setLoading(true);
-                const response = await api.get("/products");
-                setProducts(response.data);
-                setError(null);
-            } catch (err) {
-                setError("Failed to fetch products. Please try again later.");
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProducts();
+        if (!isFiltering) {
+            fetchProducts(currentPage);
+        }
+    }, [currentPage, isFiltering, fetchProducts]);
+
+    // Handle data coming from the Navbar (Search & Filters)
+    const handleSearchResults = useCallback((data) => {
+        if (data?.isReset) {
+            setIsFiltering(false);
+            setCurrentPage(0);
+            return;
+        }
+
+        setIsFiltering(true);
+
+        if (data?.content) {
+            setProducts(data.content);
+            setTotalPages(data.page?.totalPages || 1);
+        } else {
+            setProducts(Array.isArray(data) ? data : []);
+            setTotalPages(1);
+        }
     }, []);
 
     return (
@@ -56,7 +90,10 @@ function InnerApp() {
                     : "bg-yellow-50 text-gray-900"
             }`}
         >
-            <Navbar setShowCart={setShowCart} onSearchResults={setProducts} />
+            <Navbar
+                setShowCart={setShowCart}
+                onSearchResults={handleSearchResults}
+            />
 
             <main className="container mx-auto px-4 py-8">
                 <Routes>
@@ -68,7 +105,51 @@ function InnerApp() {
                             ) : error ? (
                                 <ErrorState error={error} />
                             ) : (
-                                <ProductGrid products={products} />
+                                <div className="flex flex-col pb-8">
+                                    <ProductGrid products={products} />
+
+                                    {/* Neo-brutalist Pagination Controls */}
+                                    {totalPages > 1 && !isFiltering && (
+                                        <div className="flex justify-center items-center gap-4 mt-12 mb-4">
+                                            <button
+                                                onClick={() =>
+                                                    setCurrentPage((p) =>
+                                                        Math.max(0, p - 1),
+                                                    )
+                                                }
+                                                disabled={currentPage === 0}
+                                                className={`p-2 border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed
+                                                ${darkMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-yellow-400 hover:bg-yellow-500 text-black"}`}
+                                            >
+                                                <ChevronLeft size={24} />
+                                            </button>
+
+                                            <span className="font-black text-xl border-4 border-black px-4 py-1 rounded-lg bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                Page {currentPage + 1} of{" "}
+                                                {totalPages}
+                                            </span>
+
+                                            <button
+                                                onClick={() =>
+                                                    setCurrentPage((p) =>
+                                                        Math.min(
+                                                            totalPages - 1,
+                                                            p + 1,
+                                                        ),
+                                                    )
+                                                }
+                                                disabled={
+                                                    currentPage ===
+                                                    totalPages - 1
+                                                }
+                                                className={`p-2 border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed
+                                                ${darkMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-yellow-400 hover:bg-yellow-500 text-black"}`}
+                                            >
+                                                <ChevronRight size={24} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             )
                         }
                     />
@@ -83,7 +164,6 @@ function InnerApp() {
                                 <AddProduct />
                             </ProtectedRoute>
                         }
-                        z
                     />
                     <Route
                         path="/update-product/:id"

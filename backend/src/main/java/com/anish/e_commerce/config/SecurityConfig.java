@@ -1,5 +1,6 @@
 package com.anish.e_commerce.config;
 
+import com.anish.e_commerce.config.RateLimitFilter;
 import com.anish.e_commerce.jwt.JwtAuthFilter;
 import com.anish.e_commerce.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -23,36 +24,38 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
         throws Exception {
         return http
-            .cors(Customizer.withDefaults()) // ✅ enable CORS for Spring Security
+            .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth ->
                 auth
-                    .requestMatchers(
-                        "/",
-                        "/index.html",
-                        "/vite.svg",
-                        "/assets/**",
-                        "/error"
-                    )
-                    .permitAll()
+                    // 1. Public API Endpoints
                     .requestMatchers("/api/auth/**")
                     .permitAll()
                     .requestMatchers("/api/products/**", "/api/product/**")
                     .permitAll()
+                    // 2. Secured API Endpoints
                     .requestMatchers("/api/admin/**")
                     .hasRole("ADMIN")
-                    .anyRequest()
+                    .requestMatchers("/api/**")
                     .authenticated()
+                    // 3. THE CATCH-ALL
+                    .requestMatchers("/**")
+                    .permitAll()
             )
             .sessionManagement(sess ->
                 sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .userDetailsService(userDetailsService)
+            .addFilterBefore(
+                rateLimitFilter,
+                UsernamePasswordAuthenticationFilter.class
+            )
             .addFilterBefore(
                 jwtAuthFilter,
                 UsernamePasswordAuthenticationFilter.class

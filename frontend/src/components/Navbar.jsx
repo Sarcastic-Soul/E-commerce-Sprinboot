@@ -12,7 +12,7 @@ import {
     Heart,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Added useRef
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
@@ -29,13 +29,14 @@ export function Navbar({ setShowCart, onSearchResults }) {
     const [minPrice, setMinPrice] = useState("");
     const [maxPrice, setMaxPrice] = useState("");
     const [sort, setSort] = useState("asc");
-
-    // NEW Filter States
     const [available, setAvailable] = useState("");
 
     const { user, logout } = useAuth();
     const { darkMode, toggleDarkMode } = useTheme();
     const { cartItemCount } = useCart();
+
+    // Track initial mount so we don't accidentally override the pagination on load
+    const isInitialMount = useRef(true);
 
     useEffect(() => {
         const handler = setTimeout(() => setDebouncedTerm(searchTerm), 500);
@@ -45,6 +46,27 @@ export function Navbar({ setShowCart, onSearchResults }) {
     // Unified API Call combining Search + Filters
     useEffect(() => {
         const fetchData = async () => {
+            const hasFilters =
+                debouncedTerm.trim() ||
+                category ||
+                minPrice ||
+                maxPrice ||
+                available !== "" ||
+                sort !== "asc";
+
+            // If it's the very first page load and no filters are active, do nothing!
+            // Let App.jsx handle the default paginated fetch.
+            if (isInitialMount.current) {
+                isInitialMount.current = false;
+                if (!hasFilters) return;
+            }
+
+            // If the user cleared all filters, tell App.jsx to reset back to pagination
+            if (!hasFilters) {
+                onSearchResults({ isReset: true });
+                return;
+            }
+
             try {
                 const params = new URLSearchParams();
                 if (debouncedTerm.trim())
@@ -75,6 +97,8 @@ export function Navbar({ setShowCart, onSearchResults }) {
     ]);
 
     const handleResetFilters = () => {
+        setSearchTerm(""); // Added search reset
+        setDebouncedTerm("");
         setCategory("");
         setMinPrice("");
         setMaxPrice("");
@@ -266,7 +290,7 @@ export function Navbar({ setShowCart, onSearchResults }) {
                             </div>
                         </div>
 
-                        {/* NEW: Availability */}
+                        {/* Availability */}
                         <div className="flex flex-col w-full sm:w-40">
                             <label className="block font-black text-sm mb-2 text-center">
                                 AVAILABILITY

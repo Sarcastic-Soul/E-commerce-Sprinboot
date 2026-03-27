@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.anish.e_commerce.model.*;
 import com.anish.e_commerce.repo.OrderRepo;
+import com.anish.e_commerce.repo.ProductRepo;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,9 @@ public class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
+    @Mock
+    private ProductRepo productRepo;
+
     private User testUser;
     private Cart testCart;
     private Product testProduct1;
@@ -40,10 +44,12 @@ public class OrderServiceTest {
         testProduct1 = new Product();
         testProduct1.setPrice(new BigDecimal("10.00"));
         testProduct1.setName("Duck Toy");
+        testProduct1.setQuantity(10);
 
         testProduct2 = new Product();
         testProduct2.setPrice(new BigDecimal("20.50"));
         testProduct2.setName("Keyboard");
+        testProduct2.setQuantity(5);
 
         testCart = new Cart();
         testCart.setUser(testUser);

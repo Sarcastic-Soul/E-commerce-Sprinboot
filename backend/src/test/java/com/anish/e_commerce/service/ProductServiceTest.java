@@ -16,6 +16,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
@@ -49,16 +52,22 @@ public class ProductServiceTest {
 
     @Test
     void testGetAllProducts() {
-        // Arrange: Tell the mock database what to return
-        when(productRepo.findAll()).thenReturn(List.of(dummyProduct));
+        // Arrange: Create a fake Page of products
+        Page<Product> dummyPage = new PageImpl<>(List.of(dummyProduct));
 
-        // Act: Call the actual service method
-        List<Product> products = productService.getAllProducts();
+        // Tell the mock database to return the fake Page when asked for ANY Pageable
+        when(productRepo.findAll(any(PageRequest.class))).thenReturn(dummyPage);
 
-        // Assert: Verify the results
+        // Act: Call the actual service method with page 0, size 12
+        Page<Product> productPage = productService.getAllProducts(0, 12);
+
+        // Assert: Verify the results by extracting the content from the Page
+        List<Product> products = productPage.getContent();
         assertEquals(1, products.size());
         assertEquals("Test Duck", products.get(0).getName());
-        verify(productRepo, times(1)).findAll(); // Verify the repo was called exactly once
+
+        // Verify the paginated version of findAll was called exactly once
+        verify(productRepo, times(1)).findAll(any(PageRequest.class));
     }
 
     @Test

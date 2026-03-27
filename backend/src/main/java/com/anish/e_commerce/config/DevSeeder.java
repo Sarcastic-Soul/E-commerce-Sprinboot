@@ -53,6 +53,7 @@ public class DevSeeder implements CommandLineRunner {
     private void seedProducts() {
         if (productRepo.count() > 0) return;
 
+        // 1
         productRepo.save(
             new Product(
                 0,
@@ -68,6 +69,7 @@ public class DevSeeder implements CommandLineRunner {
             )
         );
 
+        // 2
         productRepo.save(
             new Product(
                 0,
@@ -83,6 +85,7 @@ public class DevSeeder implements CommandLineRunner {
             )
         );
 
+        // 3
         productRepo.save(
             new Product(
                 0,
@@ -98,6 +101,7 @@ public class DevSeeder implements CommandLineRunner {
             )
         );
 
+        // 4
         productRepo.save(
             new Product(
                 0,
@@ -113,6 +117,7 @@ public class DevSeeder implements CommandLineRunner {
             )
         );
 
+        // 5
         productRepo.save(
             new Product(
                 0,
@@ -128,6 +133,166 @@ public class DevSeeder implements CommandLineRunner {
             )
         );
 
-        System.out.println("✅ DevSeeder inserted 5 products");
+        // 6
+        productRepo.save(
+            new Product(
+                0,
+                "Neon Hoodie",
+                "Heavyweight glow-in-the-dark developer hoodie.",
+                "NullWear",
+                new BigDecimal("45.99"),
+                ProductCategory.FASHION,
+                new Date(),
+                true,
+                30,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg"
+            )
+        );
+
+        // 7
+        productRepo.save(
+            new Product(
+                0,
+                "QuackPad Mouse",
+                "Ergonomic gaming mouse with ultra-fast switches.",
+                "Quacktronics",
+                new BigDecimal("59.99"),
+                ProductCategory.ELECTRONICS,
+                new Date(),
+                true,
+                25,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg"
+            )
+        );
+
+        // 8
+        productRepo.save(
+            new Product(
+                0,
+                "CyberMug",
+                "Self-heating smart coffee mug for long coding nights.",
+                "NeoGear",
+                new BigDecimal("35.00"),
+                ProductCategory.HOME_KITCHEN,
+                new Date(),
+                true,
+                40,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg"
+            )
+        );
+
+        // 9
+        productRepo.save(
+            new Product(
+                0,
+                "Classic Debugger",
+                "The legendary yellow rubber debugging duck.",
+                "ChaosToys",
+                new BigDecimal("9.99"),
+                ProductCategory.TOYS_GAMES,
+                new Date(),
+                true,
+                100,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg"
+            )
+        );
+
+        // 10
+        productRepo.save(
+            new Product(
+                0,
+                "Hacker Shades",
+                "Polarized anti-blue light glasses for screen protection.",
+                "NullWear",
+                new BigDecimal("22.50"),
+                ProductCategory.FASHION,
+                new Date(),
+                true,
+                50,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg"
+            )
+        );
+
+        // 11
+        productRepo.save(
+            new Product(
+                0,
+                "Tactile Switches Pack",
+                "Box of 90 custom tactile switches for your mech.",
+                "Quacktronics",
+                new BigDecimal("39.99"),
+                ProductCategory.ELECTRONICS,
+                new Date(),
+                true,
+                200,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg"
+            )
+        );
+
+        // 12
+        productRepo.save(
+            new Product(
+                0,
+                "Smart Desk Lamp",
+                "App-controlled RGB desk lamp to set the mood.",
+                "NeoGear",
+                new BigDecimal("49.99"),
+                ProductCategory.HOME_KITCHEN,
+                new Date(),
+                true,
+                15,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg"
+            )
+        );
+
+        // 13
+        productRepo.save(
+            new Product(
+                0,
+                "Debug Duck XL",
+                "Giant 2-foot debugging duck for monumental bugs.",
+                "ChaosToys",
+                new BigDecimal("79.99"),
+                ProductCategory.TOYS_GAMES,
+                new Date(),
+                true,
+                5,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg"
+            )
+        );
+
+        // 14
+        productRepo.save(
+            new Product(
+                0,
+                "Tech Cargo Pants",
+                "Durable cargo pants with extreme pocket capacity.",
+                "NullWear",
+                new BigDecimal("55.00"),
+                ProductCategory.FASHION,
+                new Date(),
+                true,
+                45,
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg"
+            )
+        );
+
+        // 15 - OUT OF STOCK EXAMPLE
+        productRepo.save(
+            new Product(
+                0,
+                "Wireless Charger",
+                "Fast charging pad for all your devices. Currently backordered.",
+                "Quacktronics",
+                new BigDecimal("29.99"),
+                ProductCategory.ELECTRONICS,
+                new Date(),
+                false, // Set to false to test out-of-stock logic!
+                0, // 0 quantity
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg"
+            )
+        );
+
+        System.out.println("✅ DevSeeder inserted 15 products");
     }
 }
