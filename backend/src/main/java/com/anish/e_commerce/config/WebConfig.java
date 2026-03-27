@@ -27,12 +27,26 @@ public class WebConfig implements WebMvcConfigurer {
                         Resource requestedResource = location.createRelative(
                             resourcePath
                         );
-                        // If the file exists (like main.js or an image), serve it.
-                        // Otherwise, forward everything else to index.html for React Router to handle!
-                        return requestedResource.exists() &&
+
+                        // 1. If the file exists, serve it.
+                        if (
+                            requestedResource.exists() &&
                             requestedResource.isReadable()
-                            ? requestedResource
-                            : new ClassPathResource("/static/index.html");
+                        ) {
+                            return requestedResource;
+                        }
+
+                        // 2. IMPORTANT: Do NOT route API or Swagger requests to the React index.html
+                        if (
+                            resourcePath.startsWith("api/") ||
+                            resourcePath.startsWith("swagger-ui/") ||
+                            resourcePath.startsWith("v3/api-docs")
+                        ) {
+                            return null;
+                        }
+
+                        // 3. Otherwise, forward everything else to index.html for React Router!
+                        return new ClassPathResource("/static/index.html");
                     }
                 }
             );
