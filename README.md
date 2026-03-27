@@ -115,7 +115,7 @@ spring.datasource.password=your_password
 
 ```bash
 cd backend
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 > 🔁 `DevSeeder.java` auto-inserts sample products and the default users on first boot.
