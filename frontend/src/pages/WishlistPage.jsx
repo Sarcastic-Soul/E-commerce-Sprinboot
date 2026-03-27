@@ -1,4 +1,3 @@
-// src/pages/WishlistPage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft } from "lucide-react";
@@ -20,7 +19,6 @@ export default function WishlistPage() {
             try {
                 setLoading(true);
                 const response = await api.get("/user/wishlist");
-                // The backend returns an array of Wishlist objects, which contain the Product
                 setWishlist(response.data);
                 setError(null);
             } catch (err) {
@@ -36,7 +34,7 @@ export default function WishlistPage() {
         fetchWishlist();
     }, []);
 
-    // Function to remove an item from the list instantly without reloading
+    // Function to instantly remove item from UI when the heart is clicked
     const handleRemoveFromWishlist = (productId) => {
         setWishlist((current) =>
             current.filter((item) => item.product.id !== productId),
@@ -88,22 +86,21 @@ export default function WishlistPage() {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {wishlist.map((item) => (
-                        <div
+                        <ProductCard
                             key={item.id}
-                            onClick={() =>
-                                handleRemoveFromWishlist(item.product.id)
-                            }
-                        >
-                            {/* We pass item.product because our API returns a Wishlist entity
-                               We also wrap it to intercept the heart click and remove it from UI immediately
-                             */}
-                            <ProductCard
-                                product={item.product}
-                                onClick={() =>
-                                    navigate(`/product/${item.product.id}`)
+                            product={item.product}
+                            // 1. Force the heart to be filled
+                            initialIsWishlisted={true}
+                            // 2. Tell the card what to do when the heart is clicked
+                            onWishlistChange={(productId, isNowWishlisted) => {
+                                if (!isNowWishlisted) {
+                                    handleRemoveFromWishlist(productId);
                                 }
-                            />
-                        </div>
+                            }}
+                            onClick={() =>
+                                navigate(`/product/${item.product.id}`)
+                            }
+                        />
                     ))}
                 </div>
             )}

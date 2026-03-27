@@ -26,25 +26,11 @@ export default function ProductCard({
         ? product.imageUrl.toString()
         : "https://picsum.photos/400";
 
-    // Check database on load
     useEffect(() => {
-        const checkWishlistStatus = async () => {
-            if (user && initialIsWishlisted === null) {
-                try {
-                    const response = await api.get("/user/wishlist");
-                    // Force both to be Numbers just in case to prevent strict equality bugs
-                    const isInWishlist = response.data.some(
-                        (item) =>
-                            Number(item.product.id) === Number(product.id),
-                    );
-                    setIsWishlisted(isInWishlist);
-                } catch (error) {
-                    console.error("Failed to fetch wishlist status:", error);
-                }
-            }
-        };
-        checkWishlistStatus();
-    }, [user, product.id, initialIsWishlisted]);
+        if (initialIsWishlisted !== null) {
+            setIsWishlisted(initialIsWishlisted);
+        }
+    }, [initialIsWishlisted]);
 
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
