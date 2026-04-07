@@ -29,7 +29,7 @@ RUN mvn clean package -DskipTests
 # ==========================================
 # Stage 3: Production Runtime
 # ==========================================
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copy the final "Fat JAR"
