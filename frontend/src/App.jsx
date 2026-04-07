@@ -44,7 +44,6 @@ function InnerApp() {
             const response = await api.get(`/products?page=${page}&size=12`);
 
             // Extract the 'content' array from the Spring Boot Page object
-            console.log(response.data);
             setProducts(response.data.content || response.data);
             setTotalPages(response.data.page?.totalPages || 1);
             setError(null);

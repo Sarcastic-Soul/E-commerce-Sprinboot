@@ -25,8 +25,11 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(initialToken);
     const [user, setUser] = useState(() => getUserFromToken(initialToken));
 
-    const saveToken = (newToken) => {
+    const saveTokens = (newToken, newRefreshToken) => {
         localStorage.setItem("token", newToken);
+        if (newRefreshToken) {
+            localStorage.setItem("refreshToken", newRefreshToken);
+        }
         setToken(newToken);
         setUser(getUserFromToken(newToken));
     };
@@ -34,7 +37,8 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         try {
             const res = await axios.post("/auth/login", { username, password });
-            saveToken(res.data.token);
+            // Save both the access token and the refresh token returned from the backend
+            saveTokens(res.data.token, res.data.refreshToken);
         } catch (err) {
             throw new Error("Login failed");
         }
@@ -50,11 +54,23 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        setToken(null);
-        setUser(null);
-        window.location.reload();
+    const logout = async () => {
+        try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+                // Optionally notify backend to revoke the token in Redis
+                await axios.post("/auth/logout", { refreshToken });
+            }
+        } catch (err) {
+            console.error("Logout request failed on server", err);
+        } finally {
+            // Ensure local state and storage are cleared regardless of server response
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
+            setToken(null);
+            setUser(null);
+            window.location.reload();
+        }
     };
 
     return (
