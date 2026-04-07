@@ -264,7 +264,7 @@ export function Navbar({ setShowCart, onSearchResults }) {
                                 <input
                                     type="number"
                                     min="0"
-                                    placeholder="Min $"
+                                    placeholder="Min ₹"
                                     value={minPrice}
                                     onChange={(e) =>
                                         setMinPrice(e.target.value)
@@ -277,7 +277,7 @@ export function Navbar({ setShowCart, onSearchResults }) {
                                 <input
                                     type="number"
                                     min="0"
-                                    placeholder="Max $"
+                                    placeholder="Max ₹"
                                     value={maxPrice}
                                     onChange={(e) =>
                                         setMaxPrice(e.target.value)

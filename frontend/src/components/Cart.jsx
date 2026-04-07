@@ -259,7 +259,7 @@ export default function Cart({ closeCart }) {
                                             </button>
                                         </div>
                                         <p className="font-bold">
-                                            ${item.price.toFixed(2)}
+                                            ₹{item.price.toFixed(2)}
                                         </p>
                                         <div className="flex items-center mt-2">
                                             <button
@@ -294,7 +294,7 @@ export default function Cart({ closeCart }) {
                             <div className="flex justify-between items-center">
                                 <span className="text-lg">Total:</span>
                                 <span className="text-2xl font-black">
-                                    ${cartTotal.toFixed(2)}
+                                    ₹{cartTotal.toFixed(2)}
                                 </span>
                             </div>
                         </div>

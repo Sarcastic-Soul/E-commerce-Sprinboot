@@ -129,7 +129,7 @@ export default function ProductCard({
                 <div className="mb-4">
                     <p className="text-sm opacity-70">{product.category}</p>
                     <p className="text-xl font-bold mt-1">
-                        ${product.price.toFixed(2)}
+                        ₹{product.price.toFixed(2)}
                     </p>
                 </div>
 

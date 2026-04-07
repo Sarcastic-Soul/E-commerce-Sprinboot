@@ -148,7 +148,7 @@ export default function ProductDetail({ product }) {
                             {product.category}
                         </div>
                         <p className="text-3xl font-black mb-4">
-                            ${product.price.toFixed(2)}
+                            ₹{product.price.toFixed(2)}
                         </p>
 
                         <div

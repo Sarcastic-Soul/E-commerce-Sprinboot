@@ -77,7 +77,7 @@ export default function OrderHistoryPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="font-black text-xl">
-                                        ${order.totalAmount.toFixed(2)}
+                                        ₹{order.totalAmount.toFixed(2)}
                                     </p>
                                     <span
                                         className={`inline-block px-3 py-1 font-bold text-xs rounded-full border-2 mt-1 ${getStatusColor(order.status)}`}
@@ -96,7 +96,7 @@ export default function OrderHistoryPage() {
                                             {item.quantity}x {item.product.name}
                                         </span>
                                         <span>
-                                            $
+                                            ₹
                                             {(
                                                 item.priceAtPurchase *
                                                 item.quantity

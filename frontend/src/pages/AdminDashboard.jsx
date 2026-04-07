@@ -72,7 +72,7 @@ export default function AdminDashboard() {
         },
         {
             title: "TOTAL REVENUE",
-            value: `$${stats.totalRevenue ? stats.totalRevenue.toFixed(2) : "0.00"}`,
+            value: `₹${stats.totalRevenue ? stats.totalRevenue.toFixed(2) : "0.00"}`,
             icon: DollarSign,
             color: "bg-yellow-400",
         },
@@ -205,11 +205,11 @@ export default function AdminDashboard() {
                                         stroke={darkMode ? "#fff" : "#000"}
                                         tick={{ fontWeight: "bold" }}
                                         width={80} // Extra width for formatting currency
-                                        tickFormatter={(value) => `$${value}`}
+                                        tickFormatter={(value) => `₹${value}`}
                                     />
                                     <Tooltip
                                         formatter={(value) => [
-                                            `$${Number(value).toFixed(2)}`,
+                                            `₹${Number(value).toFixed(2)}`,
                                             "Revenue",
                                         ]}
                                         contentStyle={{

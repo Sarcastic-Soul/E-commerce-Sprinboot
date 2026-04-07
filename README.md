@@ -60,10 +60,11 @@ graph TD
 
 ### Backend
 - **Spring Boot 3** (Java 21)
-- **Spring Security + JWT** (Role-based authorization: `USER`, `ADMIN`)
+- **Spring Security + JWT** (Role-based authorization with **Redis-backed Refresh Tokens**)
 - **Bucket4j** (IP-based API Rate Limiting)
 - **PostgreSQL** (Local pgAdmin for Dev, NeonDB for Prod)
-- **Redis** for high-performance API caching
+- **Redis** for high-performance API caching & Token TTL management
+- **Razorpay** for mock payment gateway integration
 - **Cloudinary** for image uploads
 - **JUnit 5 & Mockito** for unit and integration testing
 
@@ -77,7 +78,7 @@ graph TD
 ## ✨ Features
 
 ### 👨‍💻 Auth & Security
-- JWT-based login/signup with auto-login and session management.
+- **Advanced JWT Auth:** Short-lived access tokens combined with secure, Redis-backed long-lived **Refresh Tokens**.
 - Role-based protected routes (`ADMIN` vs `USER`).
 - **API Rate Limiting:** Public endpoints are protected by Bucket4j token-bucket algorithms to prevent bot scraping and brute-force attacks.
 
@@ -89,8 +90,9 @@ graph TD
 
 ### 🛒 Cart & 📦 Orders
 - Sliding cart drawer with dynamic Context badge.
-- **Checkout System:** Convert carts into immutable orders. Inventory automatically deducts.
-- **Order History:** Users can track their past orders, totals, and statuses.
+- **Checkout System:** Seamless **Razorpay Payment Gateway** integration (Test Mode).
+- **Smart Inventory:** Inventory automatically deducts only upon successful payment verification.
+- **Order History:** Users can track their past orders, dynamically colored statuses (`PENDING`, `COMPLETED`, `REJECTED`), and itemized totals.
 
 ### 🔔 Real-Time Notifications
 - When an admin restocks a product from `0` to `>=1`, all users who wishlisted the item receive an instant "Back in Stock" notification.
@@ -109,13 +111,14 @@ graph TD
 - PostgreSQL installed locally (or via Docker)
 - Redis installed locally (or via Docker: `docker run -p 6379:6379 redis`)
 - Cloudinary Account (for image uploads)
+- Razorpay Account (for test API keys)
 
 ### 1. Backend Setup
 The backend uses Spring Profiles. By default, it runs in `prod` mode, so you must explicitly run it in `dev` mode locally.
 
 1. Open `backend/src/main/resources/application-dev.properties`.
 2. Ensure your local Postgres credentials are correct.
-3. Add your Cloudinary credentials and JWT Secret to your environment variables or properties file.
+3. Add your Cloudinary credentials, JWT Secret, and **Razorpay API Keys** to your environment variables or properties file.
 4. Run the backend using the dev profile:
 ```bash
 cd backend
@@ -123,6 +126,9 @@ cd backend
 ```
 
 ### 2. Frontend Setup
+Create a `.env` file in the `frontend` directory and add your Razorpay Test Key ID:
+`VITE_RAZORPAY_KEY_ID=rzp_test_your_key_here`
+
 In local development, Vite is configured to proxy `/api` requests to `localhost:8080`, bypassing CORS issues seamlessly.
 ```bash
 cd frontend
@@ -134,7 +140,9 @@ npm run dev
 
 ## 🚀 Clone & Deploy (CI/CD)
 
-This project is configured with a fully automated CI/CD pipeline. When you push to the `main` branch, GitHub Actions builds a **Monolith Docker Image** and pushes it to Docker Hub. Deploy to Render using your Docker Hub image, setting the necessary environment variables (`SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `REDIS_URL`, etc.).
+This project is configured with a fully automated CI/CD pipeline. When you push to the `main` branch, GitHub Actions builds a **Monolith Docker Image** (injecting the Razorpay Key ID via Build Args) and pushes it to Docker Hub. Deploy to Render using your Docker Hub image, setting the necessary environment variables (`SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `REDIS_URL`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, etc.).
+
+> **Note:** You must add `VITE_RAZORPAY_KEY_ID`, `DOCKER_USERNAME`, and `DOCKER_PASSWORD` to your GitHub Repository Secrets for the pipeline to build the frontend correctly and automatically publish the Docker image to Docker Hub!
 
 ---
 
