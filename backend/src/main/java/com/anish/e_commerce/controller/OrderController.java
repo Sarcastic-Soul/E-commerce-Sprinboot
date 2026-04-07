@@ -16,7 +16,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/place")
-    public ResponseEntity<Order> placeOrder(Authentication authentication) {
+    public ResponseEntity<?> placeOrder(Authentication authentication) {
         Order order = orderService.placeOrder(authentication.getName());
         return ResponseEntity.ok(order);
     }

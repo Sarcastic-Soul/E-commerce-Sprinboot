@@ -29,6 +29,8 @@ public class Order {
 
     private LocalDateTime createdAt;
 
+    private String razorpayOrderId;
+
     @OneToMany(
         mappedBy = "order",
         cascade = CascadeType.ALL,

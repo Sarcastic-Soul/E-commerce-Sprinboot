@@ -111,12 +111,12 @@ graph TD
 - Cloudinary Account (for image uploads)
 
 ### 1. Backend Setup
-The backend uses Spring Profiles. Locally, it defaults to the `dev` profile.
+The backend uses Spring Profiles. By default, it runs in `prod` mode, so you must explicitly run it in `dev` mode locally.
 
 1. Open `backend/src/main/resources/application-dev.properties`.
 2. Ensure your local Postgres credentials are correct.
 3. Add your Cloudinary credentials and JWT Secret to your environment variables or properties file.
-4. Run the backend:
+4. Run the backend using the dev profile:
 ```bash
 cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev

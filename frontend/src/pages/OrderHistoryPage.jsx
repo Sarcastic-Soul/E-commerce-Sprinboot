@@ -3,7 +3,7 @@ import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
 import LoadingState from "../components/LoadingState";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, History } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function OrderHistoryPage() {
     const [orders, setOrders] = useState([]);
@@ -24,6 +24,19 @@ export default function OrderHistoryPage() {
         };
         fetchOrders();
     }, []);
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "COMPLETED":
+                return "bg-green-200 text-green-800 border-green-800";
+            case "PENDING":
+                return "bg-yellow-200 text-yellow-800 border-yellow-800";
+            case "REJECTED":
+                return "bg-red-200 text-red-800 border-red-800";
+            default:
+                return "bg-gray-200 text-gray-800 border-gray-800";
+        }
+    };
 
     if (loading) return <LoadingState />;
 
@@ -66,7 +79,9 @@ export default function OrderHistoryPage() {
                                     <p className="font-black text-xl">
                                         ${order.totalAmount.toFixed(2)}
                                     </p>
-                                    <span className="inline-block px-3 py-1 bg-green-200 text-green-800 font-bold text-xs rounded-full border-2 border-green-800 mt-1">
+                                    <span
+                                        className={`inline-block px-3 py-1 font-bold text-xs rounded-full border-2 mt-1 ${getStatusColor(order.status)}`}
+                                    >
                                         {order.status}
                                     </span>
                                 </div>

@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OrderRepo extends JpaRepository<Order, Long> {
     List<Order> findByUser_UsernameOrderByCreatedAtDesc(String username);
+    java.util.Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 }
