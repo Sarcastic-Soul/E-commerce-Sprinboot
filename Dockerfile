@@ -8,6 +8,11 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
+
+# Pass the Razorpay Key to Vite during the build
+ARG VITE_RAZORPAY_KEY_ID
+ENV VITE_RAZORPAY_KEY_ID=$VITE_RAZORPAY_KEY_ID
+
 # Output goes to /app/frontend/dist
 RUN npm run build
 
@@ -20,7 +25,7 @@ WORKDIR /app/backend
 COPY backend/pom.xml ./
 COPY backend/src ./src
 
-# MAGIC TRICK: Copy the React build into Spring Boot's static folder BEFORE packaging
+# Copy the React build into Spring Boot's static folder BEFORE packaging
 COPY --from=frontend-build /app/frontend/dist ./src/main/resources/static/
 
 # Package the JAR
