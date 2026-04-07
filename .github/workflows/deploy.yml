@@ -33,3 +33,8 @@ jobs:
                       VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
                   # Change this tag to whatever you want
                   tags: ${{ secrets.DOCKER_USERNAME }}/brutshop-fullstack:latest
+
+            - name: Trigger Render Deploy
+              if: success()
+              run: |
+                  curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
