@@ -47,7 +47,12 @@ export default function ProductDetail({ product }) {
         try {
             const response = await api.post(`/user/wishlist/${product.id}`);
             setIsWishlisted(!isWishlisted);
-            toast.success(response.data);
+            const msg =
+                response.data?.message ||
+                (typeof response.data === "string"
+                    ? response.data
+                    : "Wishlist updated");
+            toast.success(msg);
         } catch (error) {
             console.error("Wishlist error:", error);
             toast.error("Failed to update wishlist");

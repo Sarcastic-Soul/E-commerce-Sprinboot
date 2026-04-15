@@ -42,7 +42,12 @@ export default function ProductCard({
             const response = await api.post(`/user/wishlist/${product.id}`);
             const newState = !isWishlisted;
             setIsWishlisted(newState);
-            toast.success(response.data);
+            const msg =
+                response.data?.message ||
+                (typeof response.data === "string"
+                    ? response.data
+                    : "Wishlist updated");
+            toast.success(msg);
 
             if (onWishlistChange) {
                 onWishlistChange(product.id, newState);
