@@ -8,7 +8,7 @@ Just want to see the app in action?
 
 - **🔗 Live Website:** [https://springboot-ecommerce-latest-ctgu.onrender.com/](https://springboot-ecommerce-latest-ctgu.onrender.com/)
 - **📖 API Documentation (Swagger):** [https://springboot-ecommerce-latest-ctgu.onrender.com/swagger-ui/index.html](https://springboot-ecommerce-latest-ctgu.onrender.com/swagger-ui/index.html)
-- **📺 Demo Video:** [INSERT_YOUR_YOUTUBE_LINK_HERE]
+- **📺 Demo Video:** https://youtu.be/o3MAQWqXyqA
 
 > ⚠️ **HEADS UP:** This project is hosted on Render's free tier. If the site hasn't received traffic in a while, the server goes to sleep. **It may take 2-5 minutes to spin up on your first visit.** If it seems stuck loading, just give it a minute! Alternatively, check out the demo video above to see its performance.
 
@@ -25,6 +25,7 @@ You can log in and test the features using these pre-configured accounts:
 
 ![Preview](./Screenshot.png)  
 
+[![Watch Demo](https://img.youtube.com/vi/o3MAQWqXyqA/0.jpg)](https://youtu.be/o3MAQWqXyqA)
 ---
 
 ## 🏛 System Architecture
