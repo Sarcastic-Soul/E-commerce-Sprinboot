@@ -25,6 +25,8 @@ You can log in and test the features using these pre-configured accounts:
 
 ![Preview](./Screenshot.png)  
 
+## ▶️ Watch Demo Video on YouTube
+
 [![Watch Demo](https://img.youtube.com/vi/o3MAQWqXyqA/0.jpg)](https://youtu.be/o3MAQWqXyqA)
 ---
 
