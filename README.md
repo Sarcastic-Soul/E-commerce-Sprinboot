@@ -1,169 +1,208 @@
-# 🛒 BrutShop — Full-Stack E-Commerce Platform
+# 🛒 BrutShop
 
-A **Neo-brutalist styled full-stack e-commerce application** built with **React 19 + Vite** and **Spring Boot 3**. It features robust JWT auth, role-based access, an order management system, a wishlist & notification engine, dynamic product filtering, server-side pagination, Redis caching, API rate limiting, and a beautifully brutal UI.
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/Sarcastic-Soul/E-commerce-Sprinboot/deploy.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI%2FCD)](https://github.com/Sarcastic-Soul/E-commerce-Sprinboot/actions/workflows/deploy.yml)
+[![Live Demo](https://img.shields.io/badge/demo-live-success?style=flat-square&logo=render&logoColor=white)](https://springboot-ecommerce-latest-ctgu.onrender.com/)
+[![API Docs](https://img.shields.io/badge/API-Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)](https://springboot-ecommerce-latest-ctgu.onrender.com/swagger-ui/index.html)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-## 🌐 Live Demo & Access
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 
-Just want to see the app in action?
+> Neo-brutalist full-stack e-commerce platform — **React 19** + **Spring Boot 3**, shipped as a single Docker monolith.
 
-- **🔗 Live Website:** [https://springboot-ecommerce-latest-ctgu.onrender.com/](https://springboot-ecommerce-latest-ctgu.onrender.com/)
-- **📖 API Documentation (Swagger):** [https://springboot-ecommerce-latest-ctgu.onrender.com/swagger-ui/index.html](https://springboot-ecommerce-latest-ctgu.onrender.com/swagger-ui/index.html)
-- **📺 Demo Video:** https://youtu.be/o3MAQWqXyqA
+JWT auth with refresh tokens · role-based access · Razorpay checkout · wishlist & restock notifications · Redis caching · rate limiting · admin analytics.
 
-> ⚠️ **HEADS UP:** This project is hosted on Render's free tier. If the site hasn't received traffic in a while, the server goes to sleep. **It may take 2-5 minutes to spin up on your first visit.** If it seems stuck loading, just give it a minute! Alternatively, check out the demo video above to see its performance.
+---
 
-### 🔑 Demo Credentials
+## 🌐 Live Demo
 
-You can log in and test the features using these pre-configured accounts:
+| | Link |
+|---|---|
+| 🔗 **App** | [springboot-ecommerce-latest-ctgu.onrender.com](https://springboot-ecommerce-latest-ctgu.onrender.com/) |
+| 📖 **API Docs (Swagger)** | [/swagger-ui/index.html](https://springboot-ecommerce-latest-ctgu.onrender.com/swagger-ui/index.html) |
+| 📺 **Demo Video** | [youtu.be/o3MAQWqXyqA](https://youtu.be/o3MAQWqXyqA) |
 
-- **Standard User:** Username: `user` | Password: `user123`
-- **Admin User:** Username: `admin` | Password: `admin123`
+> ⚠️ **Hosted on Render's free tier.** The server sleeps when idle — the first visit can take **2–5 minutes** to wake up. Watch the demo video if you'd rather not wait.
+
+### 🔑 Demo Accounts
+
+| Role | Username | Password |
+|---|---|---|
+| Standard user | `user` | `user123` |
+| Admin | `admin` | `admin123` |
+
+💡 The login page has **one-click buttons** for both accounts — no typing required.
 
 ---
 
 ## 📸 Preview
 
-![Preview](./Screenshot.png)  
-
-## ▶️ Watch Demo Video on YouTube
+![Preview](./Screenshot.png)
 
 [![Watch Demo](https://img.youtube.com/vi/o3MAQWqXyqA/0.jpg)](https://youtu.be/o3MAQWqXyqA)
+
 ---
 
-## 🏛 System Architecture
+## 🏛 Architecture
 
 ```mermaid
 graph TD
     Client[Browser / Client] -->|HTTPS| RateLimiter[Bucket4j Rate Limiter]
     RateLimiter -->|JWT Auth| Security[Spring Security Filter Chain]
-    
+
     subgraph Spring Boot Backend
         Security --> Controllers[REST Controllers]
         Controllers --> Services[Business Logic Services]
         Services --> Repositories[Spring Data JPA]
-        
+
         Services -.->|Cache Read/Write| Redis[(Redis Cache)]
         Services -.->|Upload Images| Cloudinary[Cloudinary API]
     end
-    
+
     Repositories --> Database[(PostgreSQL Database)]
 ```
+
+- React is compiled into the Spring Boot JAR at build time → **one deployable artifact**.
+- Vite proxies `/api` to `localhost:8080` in dev, so there's no CORS setup locally.
 
 ---
 
 ## 🔧 Tech Stack
 
-### Frontend
-- **React 19** (Vite)
-- **Tailwind CSS** (Neo-brutalist theme)
-- **Lucide Icons** & **Recharts** (Admin Data Visualization)
-- **React Router DOM**
-- **Axios** for API calls & **Sonner** for toast notifications
-- **JWT** token storage and AuthContext
-
-### Backend
-- **Spring Boot 3** (Java 21)
-- **Spring Security + JWT** (Role-based authorization with **Redis-backed Refresh Tokens**)
-- **Bucket4j** (IP-based API Rate Limiting)
-- **PostgreSQL** (Local pgAdmin for Dev, NeonDB for Prod)
-- **Redis** for high-performance API caching & Token TTL management
-- **Razorpay** for mock payment gateway integration
-- **Cloudinary** for image uploads
-- **JUnit 5 & Mockito** for unit and integration testing
-
-### DevOps & Deployment
-- **Docker** (Multi-stage build compiling React into the Spring Boot JAR as a Monolith)
-- **GitHub Actions** for automated CI/CD pipeline
-- **Render** for production hosting
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React 19 (Vite), Tailwind CSS 4, React Router 7, Axios, Recharts, Lucide, Sonner |
+| **Backend** | Spring Boot 3.4 (Java 21), Spring Security + JWT, Spring Data JPA, Bucket4j |
+| **Data** | PostgreSQL (Neon in prod), Redis (API cache + refresh-token TTL) |
+| **Integrations** | Razorpay (payments, test mode), Cloudinary (image hosting) |
+| **Testing** | JUnit 5, Mockito, Spring Security Test |
+| **DevOps** | Docker (multi-stage), GitHub Actions, Render |
 
 ---
 
 ## ✨ Features
 
-### 👨‍💻 Auth & Security
-- **Advanced JWT Auth:** Short-lived access tokens combined with secure, Redis-backed long-lived **Refresh Tokens**.
-- Role-based protected routes (`ADMIN` vs `USER`).
-- **API Rate Limiting:** Public endpoints are protected by Bucket4j token-bucket algorithms to prevent bot scraping and brute-force attacks.
+**🔐 Auth & Security**
+- Short-lived JWT access tokens + Redis-backed refresh tokens.
+- Role-based route protection (`ADMIN` / `USER`), enforced on both client and server.
+- Per-user ownership checks on carts and notifications.
+- IP-based rate limiting (30 req/min) on public endpoints via Bucket4j.
 
-### 🛍 Products & Discovery
-- **Server-Side Pagination:** Efficiently browse catalogs with Spring Data `Pageable`.
-- Product grid with **Debounced Search** and **Redis Caching** for instant load times.
-- **Dynamic Brutalist Filter Drawer** (Filter by Category, Price Range, and Sorting).
-- **Wishlist System:** Users can save products, triggering instant UI updates.
+**🛍 Products & Discovery**
+- Server-side pagination with Spring Data `Pageable`.
+- Debounced search + Redis-cached product reads.
+- Filter drawer: category, price range, availability, sorting.
+- Wishlist with instant UI updates.
 
-### 🛒 Cart & 📦 Orders
-- Sliding cart drawer with dynamic Context badge.
-- **Checkout System:** Seamless **Razorpay Payment Gateway** integration (Test Mode).
-- **Smart Inventory:** Inventory automatically deducts only upon successful payment verification.
-- **Order History:** Users can track their past orders, dynamically colored statuses (`PENDING`, `COMPLETED`, `REJECTED`), and itemized totals.
+**🛒 Cart & Orders**
+- Sliding cart drawer with live badge count.
+- Razorpay checkout (test mode) with server-side signature verification.
+- Stock deducts only after payment is verified, from the order snapshot.
+- Order history with statuses: `PENDING` · `COMPLETED` · `REJECTED`.
 
-### 🔔 Real-Time Notifications
-- When an admin restocks a product from `0` to `>=1`, all users who wishlisted the item receive an instant "Back in Stock" notification.
+**🔔 Notifications**
+- Restocking a product from `0` → `≥1` notifies every user who wishlisted it.
 
-### 📊 Admin Dashboard
-- Global platform statistics (Total Users, Products, Orders).
-- **Interactive Line Chart** mapping order trends over time using Recharts.
+**📊 Admin Dashboard**
+- Totals for users, products, orders, revenue, and out-of-stock items.
+- Recharts line chart of order trends over time.
 
 ---
 
-## 💻 Local Development Setup
+## 💻 Local Setup
 
 ### Prerequisites
-- Java 21
-- Node.js (v18+)
-- PostgreSQL installed locally (or via Docker)
-- Redis installed locally (or via Docker: `docker run -p 6379:6379 redis`)
-- Cloudinary Account (for image uploads)
-- Razorpay Account (for test API keys)
 
-### 1. Backend Setup
-The backend uses Spring Profiles. By default, it runs in `prod` mode, so you must explicitly run it in `dev` mode locally.
+| Requirement | Notes |
+|---|---|
+| Java 21 | |
+| Node.js 18+ | |
+| PostgreSQL | Database named `brutshop`, or edit `application-dev.properties` |
+| Redis | `docker run -p 6379:6379 redis` |
+| Cloudinary account | Optional — needed only for image upload |
+| Razorpay account | Optional — needed only for checkout (test keys) |
 
-1. Open `backend/src/main/resources/application-dev.properties`.
-2. Ensure your local Postgres credentials are correct.
-3. Set up your local secrets. Copy the template and fill it in:
+### 1. Backend
+
 ```bash
-cp backend/secrets.properties.example backend/secrets.properties
-```
-`secrets.properties` is gitignored and dockerignored, so it never leaves your machine.
-It uses the same variable names as the Render environment, and real environment
-variables override it if you want a one-off (`JWT_SECRET=... ./mvnw ...`).
-
-The app still starts with the file blank — you'll just get a warning, image upload and
-payments won't work, and JWTs will be signed with a throwaway key that changes on every
-restart (so you'll be logged out each time the server reloads).
-4. Run the backend using the dev profile:
-```bash
+cp backend/secrets.properties.example backend/secrets.properties   # then fill it in
 cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-### 2. Frontend Setup
-Create a `.env` file in the `frontend` directory and add your Razorpay Test Key ID:
-`VITE_RAZORPAY_KEY_ID=rzp_test_your_key_here`
+- The app **runs with the file blank** — you'll just get a warning; image upload and payments won't work.
+- `secrets.properties` is gitignored and dockerignored. It never leaves your machine.
+- Real environment variables override the file: `JWT_SECRET=… ./mvnw …`.
+- Defaults to the `prod` profile, so `-Dspring-boot.run.profiles=dev` is required locally.
+- On first boot, `DevSeeder` creates the demo accounts and 15 sample products.
 
-In local development, Vite is configured to proxy `/api` requests to `localhost:8080`, bypassing CORS issues seamlessly.
+### 2. Frontend
+
 ```bash
 cd frontend
+echo "VITE_RAZORPAY_KEY_ID=rzp_test_your_key_here" > .env
 npm install
 npm run dev
 ```
 
----
-
-## 🚀 Clone & Deploy (CI/CD)
-
-This project is configured with a fully automated CI/CD pipeline. When you push to the `main` branch, GitHub Actions builds a **Monolith Docker Image** (injecting the Razorpay Key ID via Build Args) and pushes it to Docker Hub. Deploy to Render using your Docker Hub image, setting the necessary environment variables: `SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `DB_USER`, `DB_PASS`, `REDIS_URL`, `JWT_SECRET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
-
-> **Note:** You must add `VITE_RAZORPAY_KEY_ID`, `DOCKER_USERNAME`, and `DOCKER_PASSWORD` to your GitHub Repository Secrets for the pipeline to build the frontend correctly and automatically publish the Docker image to Docker Hub!
+Runs on **http://localhost:3000**.
 
 ---
 
-## 🧪 Running Tests
+## 🔑 Environment Variables
 
-- **Backend:** Run `./mvnw test` in the `/backend` directory to execute the JUnit 5 and Mockito test suites (testing Services, Security, and Business Logic).
+**Backend** — from `backend/secrets.properties` locally, real env vars in production:
+
+| Variable | Required | Purpose |
+|---|:---:|---|
+| `JWT_SECRET` | ⚠️ **Yes in prod** | Signing key, 32+ chars. If unset, a random key is generated **per restart** and all sessions die with it. |
+| `DB_URL` / `DB_USER` / `DB_PASS` | Prod only | PostgreSQL connection (dev uses localhost defaults) |
+| `REDIS_URL` | Prod only | Redis connection (dev defaults to `redis://localhost:6379`) |
+| `CLOUDINARY_CLOUD_NAME` | No | Image upload |
+| `CLOUDINARY_API_KEY` | No | Image upload |
+| `CLOUDINARY_API_SECRET` | No | Image upload |
+| `RAZORPAY_KEY_ID` | No | Checkout |
+| `RAZORPAY_KEY_SECRET` | No | Payment signature verification |
+| `SPRING_PROFILES_ACTIVE` | Prod only | Set to `prod` |
+
+> Generate a signing key with `openssl rand -base64 48`.
+
+**GitHub Actions secrets** (required for CI/CD):
+
+| Secret | Purpose |
+|---|---|
+| `DOCKER_USERNAME` / `DOCKER_PASSWORD` | Push the image to Docker Hub |
+| `VITE_RAZORPAY_KEY_ID` | Baked into the frontend bundle at build time |
+| `RENDER_DEPLOY_HOOK` | Triggers the Render deploy |
+
+---
+
+## 🚀 Deployment
+
+1. Push to `main` → GitHub Actions builds the monolith Docker image and pushes it to Docker Hub.
+2. The workflow then calls the Render deploy hook.
+3. Render pulls the image and runs it with the environment variables above.
+
+---
+
+## 🧪 Tests
+
+```bash
+cd backend && ./mvnw test
+```
+
+27 tests across services, business logic, and endpoint authorization (JUnit 5 + Mockito + Spring Security Test).
+
+---
 
 ## 📝 License
-MIT — Feel free to modify and use. Credit appreciated.
+
+[MIT](LICENSE) — free to modify and use. Credit appreciated.
 
 > Made by [Anish Kumar](https://github.com/Sarcastic-Soul)
