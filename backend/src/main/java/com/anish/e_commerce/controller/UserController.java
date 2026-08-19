@@ -75,8 +75,11 @@ public class UserController {
     }
 
     @PutMapping("/notifications/{id}/read")
-    public ResponseEntity<Void> markNotificationRead(@PathVariable Long id) {
-        notificationService.markAsRead(id);
+    public ResponseEntity<Void> markNotificationRead(
+        @PathVariable Long id,
+        Authentication auth
+    ) {
+        notificationService.markAsRead(id, getCurrentUser(auth).getId());
         return ResponseEntity.ok().build();
     }
 }

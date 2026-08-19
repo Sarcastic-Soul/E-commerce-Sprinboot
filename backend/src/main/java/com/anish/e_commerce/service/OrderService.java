@@ -1,5 +1,6 @@
 package com.anish.e_commerce.service;
 
+import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.*;
 import com.anish.e_commerce.repo.OrderRepo;
 import com.anish.e_commerce.repo.ProductRepo;
@@ -27,6 +28,18 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
+        // Check stock for the whole cart up front, before building the order.
+        for (CartItem item : cart.getItems()) {
+            Product product = item.getProduct();
+            if (product.getQuantity() < item.getQuantity()) {
+                throw new RuntimeException(
+                    "Sorry, " +
+                        product.getName() +
+                        " does not have enough stock."
+                );
+            }
+        }
+
         Order order = new Order();
         order.setUser(cart.getUser());
         order.setCreatedAt(LocalDateTime.now());
@@ -50,15 +63,7 @@ public class OrderService {
                     .multiply(BigDecimal.valueOf(item.getQuantity()))
             );
 
-            if (product.getQuantity() < item.getQuantity()) {
-                throw new RuntimeException(
-                    "Sorry, " +
-                        product.getName() +
-                        " does not have enough stock."
-                );
-            }
-
-            // Stock is NO LONGER deducted here. We wait for payment confirmation.
+            // Stock is NOT deducted here. We wait for payment confirmation.
         }
 
         order.setTotalAmount(totalAmount);
@@ -75,7 +80,7 @@ public class OrderService {
             throw new RuntimeException("Failed to initialize payment", e);
         }
 
-        // Cart is NO LONGER cleared here. We wait for payment confirmation.
+        // Cart is NOT cleared here. We wait for payment confirmation.
         return savedOrder;
     }
 
@@ -83,7 +88,9 @@ public class OrderService {
     public void processSuccessfulPayment(String razorpayOrderId) {
         Order order = orderRepo
             .findByRazorpayOrderId(razorpayOrderId)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Order not found")
+            );
 
         if ("COMPLETED".equals(order.getStatus())) {
             return; // Prevent duplicate deductions if called multiple times
@@ -91,11 +98,10 @@ public class OrderService {
 
         order.setStatus("COMPLETED");
 
-        // Deduct stock based on the user's current cart items
-        Cart cart = cartService.getCartByUsername(
-            order.getUser().getUsername()
-        );
-        for (CartItem item : cart.getItems()) {
+        // Deduct stock from what was actually ordered. The cart is mutable and may
+        // have changed between placing the order and the payment callback, so the
+        // order's own items are the only authoritative record of what was bought.
+        for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
             int newQuantity = product.getQuantity() - item.getQuantity();
 
@@ -120,7 +126,9 @@ public class OrderService {
     public void processFailedPayment(String razorpayOrderId) {
         Order order = orderRepo
             .findByRazorpayOrderId(razorpayOrderId)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Order not found")
+            );
 
         if ("PENDING".equals(order.getStatus())) {
             order.setStatus("REJECTED");

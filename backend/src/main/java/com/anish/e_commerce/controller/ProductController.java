@@ -5,6 +5,7 @@ import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.service.ImageHandleService;
 import com.anish.e_commerce.service.ProductService;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -37,10 +38,8 @@ public class ProductController {
     public ResponseEntity<Product> getProductById(@PathVariable int id) {
         if (id <= 0) return ResponseEntity.badRequest().build();
 
-        Product product = productService.getProductById(id);
-        return product != null
-            ? ResponseEntity.ok(product)
-            : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        // Missing ids surface as ResourceNotFoundException -> 404
+        return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping("/products/filter")
@@ -66,73 +65,53 @@ public class ProductController {
 
     @PostMapping("/product")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addProduct(
+    public ResponseEntity<Product> addProduct(
         @Valid @RequestBody ProductDTO productDto
-    ) {
-        try {
-            // Map DTO to Entity
-            Product product = new Product();
-            product.setName(productDto.getName());
-            product.setDescription(productDto.getDescription());
-            product.setBrand(productDto.getBrand());
-            product.setPrice(productDto.getPrice());
-            product.setCategory(productDto.getCategory());
-            product.setAvailable(productDto.isAvailable());
-            product.setQuantity(productDto.getQuantity());
-            product.setImageUrl(productDto.getImageUrl());
-            product.setCreatedAt(new Date()); // Set creation date
+    ) throws IOException {
+        // Map DTO to Entity
+        Product product = new Product();
+        product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
+        product.setBrand(productDto.getBrand());
+        product.setPrice(productDto.getPrice());
+        product.setCategory(productDto.getCategory());
+        product.setAvailable(productDto.isAvailable());
+        product.setQuantity(productDto.getQuantity());
+        product.setImageUrl(productDto.getImageUrl());
+        product.setCreatedAt(new Date()); // Set creation date
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                productService.addProduct(product)
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                "Failed to add product: " + e.getMessage()
-            );
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            productService.addProduct(product)
+        );
     }
 
     @PutMapping("/product/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateProduct(
+    public ResponseEntity<Product> updateProduct(
         @PathVariable int id,
         @Valid @RequestBody ProductDTO productDto
-    ) {
-        try {
-            // Map DTO to Entity
-            Product product = new Product();
-            product.setId(id); // Ensure the ID is set for the update
-            product.setName(productDto.getName());
-            product.setDescription(productDto.getDescription());
-            product.setBrand(productDto.getBrand());
-            product.setPrice(productDto.getPrice());
-            product.setCategory(productDto.getCategory());
-            product.setAvailable(productDto.isAvailable());
-            product.setQuantity(productDto.getQuantity());
-            product.setImageUrl(productDto.getImageUrl());
+    ) throws IOException {
+        // Map DTO to Entity
+        Product product = new Product();
+        product.setId(id); // Ensure the ID is set for the update
+        product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
+        product.setBrand(productDto.getBrand());
+        product.setPrice(productDto.getPrice());
+        product.setCategory(productDto.getCategory());
+        product.setAvailable(productDto.isAvailable());
+        product.setQuantity(productDto.getQuantity());
+        product.setImageUrl(productDto.getImageUrl());
 
-            Product updated = productService.updateProduct(product);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                e.getMessage()
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                "Error updating product"
-            );
-        }
+        return ResponseEntity.ok(productService.updateProduct(product));
     }
 
     @DeleteMapping("/product/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteProduct(@PathVariable int id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable int id) {
         if (id <= 0) return ResponseEntity.badRequest().build();
 
-        if (productService.getProductById(id) == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
+        // Missing ids surface as ResourceNotFoundException -> 404
         productService.deleteProduct(id);
         return ResponseEntity.ok().build();
     }

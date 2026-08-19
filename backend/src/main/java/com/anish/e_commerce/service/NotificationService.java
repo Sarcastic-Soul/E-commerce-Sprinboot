@@ -1,5 +1,6 @@
 package com.anish.e_commerce.service;
 
+import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.Notification;
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.model.Wishlist;
@@ -7,6 +8,7 @@ import com.anish.e_commerce.repo.NotificationRepo;
 import com.anish.e_commerce.repo.WishlistRepo;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,12 +38,23 @@ public class NotificationService {
         return notificationRepo.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    public void markAsRead(Long notificationId) {
-        notificationRepo
+    public void markAsRead(Long notificationId, Long userId) {
+        Notification notification = notificationRepo
             .findById(notificationId)
-            .ifPresent(notification -> {
-                notification.setRead(true);
-                notificationRepo.save(notification);
-            });
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "Notification not found with id: " + notificationId
+                )
+            );
+
+        // Without this check any authenticated user could mark anyone's notification read.
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException(
+                "Notification does not belong to the current user"
+            );
+        }
+
+        notification.setRead(true);
+        notificationRepo.save(notification);
     }
 }

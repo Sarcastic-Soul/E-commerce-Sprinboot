@@ -1,10 +1,17 @@
 package com.anish.e_commerce.config;
 
-import com.anish.e_commerce.config.RateLimitFilter;
 import com.anish.e_commerce.jwt.JwtAuthFilter;
 import com.anish.e_commerce.service.UserDetailsServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -25,6 +32,8 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
     private final RateLimitFilter rateLimitFilter;
+
+    private static final ObjectMapper ERROR_MAPPER = new ObjectMapper();
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -55,6 +64,29 @@ public class SecurityConfig {
                     .requestMatchers("/**")
                     .permitAll()
             )
+            // Without this, Spring falls back to Http403ForbiddenEntryPoint and answers
+            // 403 even when the caller simply has no (or an expired) token. Clients
+            // cannot then tell "refresh your token" from "you may never do this", so
+            // be explicit: 401 = not authenticated, 403 = authenticated but not allowed.
+            .exceptionHandling(ex ->
+                ex
+                    .authenticationEntryPoint((request, response, authEx) ->
+                        writeError(
+                            request,
+                            response,
+                            HttpStatus.UNAUTHORIZED,
+                            "Authentication required. Your session may have expired."
+                        )
+                    )
+                    .accessDeniedHandler((request, response, deniedEx) ->
+                        writeError(
+                            request,
+                            response,
+                            HttpStatus.FORBIDDEN,
+                            "You do not have permission to access this resource."
+                        )
+                    )
+            )
             .sessionManagement(sess ->
                 sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
@@ -68,6 +100,26 @@ public class SecurityConfig {
                 UsernamePasswordAuthenticationFilter.class
             )
             .build();
+    }
+
+    /** Emits the same JSON shape as ApiErrorResponse / RateLimitFilter. */
+    private static void writeError(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        HttpStatus status,
+        String message
+    ) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/json");
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", message);
+        body.put("path", request.getRequestURI());
+
+        response.getWriter().write(ERROR_MAPPER.writeValueAsString(body));
     }
 
     @Bean

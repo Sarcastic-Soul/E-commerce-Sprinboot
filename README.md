@@ -121,7 +121,17 @@ The backend uses Spring Profiles. By default, it runs in `prod` mode, so you mus
 
 1. Open `backend/src/main/resources/application-dev.properties`.
 2. Ensure your local Postgres credentials are correct.
-3. Add your Cloudinary credentials, JWT Secret, and **Razorpay API Keys** to your environment variables or properties file.
+3. Export the secrets the app reads from the environment. None of these are committed;
+   the app still starts without them, but image upload and payments will not work and
+   JWTs will be signed with a throwaway key that changes on every restart:
+```bash
+export JWT_SECRET="a-random-string-of-at-least-32-characters"
+export CLOUDINARY_CLOUD_NAME=...
+export CLOUDINARY_API_KEY=...
+export CLOUDINARY_API_SECRET=...
+export RAZORPAY_KEY_ID=rzp_test_...
+export RAZORPAY_KEY_SECRET=...
+```
 4. Run the backend using the dev profile:
 ```bash
 cd backend
@@ -143,7 +153,7 @@ npm run dev
 
 ## 🚀 Clone & Deploy (CI/CD)
 
-This project is configured with a fully automated CI/CD pipeline. When you push to the `main` branch, GitHub Actions builds a **Monolith Docker Image** (injecting the Razorpay Key ID via Build Args) and pushes it to Docker Hub. Deploy to Render using your Docker Hub image, setting the necessary environment variables (`SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `REDIS_URL`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, etc.).
+This project is configured with a fully automated CI/CD pipeline. When you push to the `main` branch, GitHub Actions builds a **Monolith Docker Image** (injecting the Razorpay Key ID via Build Args) and pushes it to Docker Hub. Deploy to Render using your Docker Hub image, setting the necessary environment variables: `SPRING_PROFILES_ACTIVE=prod`, `DB_URL`, `DB_USER`, `DB_PASS`, `REDIS_URL`, `JWT_SECRET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
 
 > **Note:** You must add `VITE_RAZORPAY_KEY_ID`, `DOCKER_USERNAME`, and `DOCKER_PASSWORD` to your GitHub Repository Secrets for the pipeline to build the frontend correctly and automatically publish the Docker image to Docker Hub!
 

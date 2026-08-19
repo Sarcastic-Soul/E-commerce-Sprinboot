@@ -11,9 +11,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,7 +22,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
+    /**
+     * Upper bound on tracked client IPs. Without a cap the map grows for every
+     * distinct (and trivially forgeable) address we ever see, which is a slow
+     * memory leak and a cheap way to exhaust the heap.
+     */
+    private static final int MAX_TRACKED_CLIENTS = 10_000;
+
+    /** Access-ordered LRU: the least recently seen client is dropped once full. */
+    private final Map<String, Bucket> cache = Collections.synchronizedMap(
+        new LinkedHashMap<>(256, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Bucket> eldest) {
+                return size() > MAX_TRACKED_CLIENTS;
+            }
+        }
+    );
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private Bucket createNewBucket() {
@@ -30,6 +47,26 @@ public class RateLimitFilter extends OncePerRequestFilter {
             Refill.greedy(30, Duration.ofMinutes(1))
         );
         return Bucket.builder().addLimit(limit).build();
+    }
+
+    /**
+     * X-Forwarded-For is appended to by each proxy, so the value our own reverse
+     * proxy added is the *last* entry. Anything to the left of it was supplied by
+     * the client and can be forged, which would let a caller mint a fresh bucket
+     * per request and bypass the limit entirely.
+     */
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            String[] hops = forwardedFor.split(",");
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String hop = hops[i].trim();
+                if (!hop.isEmpty()) {
+                    return hop;
+                }
+            }
+        }
+        return request.getRemoteAddr();
     }
 
     @Override
@@ -45,10 +82,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             path.startsWith("/api/products/") ||
             path.startsWith("/api/product/")
         ) {
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip == null || ip.isEmpty()) {
-                ip = request.getRemoteAddr();
-            }
+            String ip = resolveClientIp(request);
 
             Bucket bucket = cache.computeIfAbsent(ip, k -> createNewBucket());
 

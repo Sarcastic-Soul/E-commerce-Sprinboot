@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor
 @Validated
+// A cart belongs to exactly one user: the {username} in the path must be the
+// caller's own, otherwise anyone logged in could read or edit someone else's cart.
+@PreAuthorize("#username == authentication.name")
 public class CartController {
 
     private final CartService cartService;

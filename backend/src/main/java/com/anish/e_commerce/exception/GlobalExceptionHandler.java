@@ -66,7 +66,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, status);
     }
 
-    // Handle general Runtime Exceptions (like "Product not found")
+    // Handle missing entities
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleResourceNotFound(
+        ResourceNotFoundException ex,
+        HttpServletRequest request
+    ) {
+        ApiErrorResponse response = buildErrorResponse(
+            HttpStatus.NOT_FOUND,
+            "Not Found",
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    // Handle general Runtime Exceptions
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntimeExceptions(
         RuntimeException ex,

@@ -17,18 +17,28 @@ api.interceptors.request.use(
     (error) => Promise.reject(error),
 );
 
+// Endpoints that must never trigger a refresh-and-retry: they either issue the
+// tokens themselves or are the refresh call, so retrying them would loop.
+const AUTH_ENDPOINTS = [
+    "/auth/login",
+    "/auth/signup",
+    "/auth/refresh",
+    "/auth/logout",
+];
+
 // Handle token expiration and refresh
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // If the error is 401 or 403 (unauthorized/forbidden) and we haven't retried yet
+        // Only 401 means "not authenticated" (missing or expired token) and is worth
+        // a refresh. A 403 means we ARE authenticated but lack permission — e.g. a
+        // normal user hitting an admin route — and refreshing cannot change that.
         if (
-            (error.response?.status === 401 ||
-                error.response?.status === 403) &&
+            error.response?.status === 401 &&
             !originalRequest._retry &&
-            originalRequest.url !== "/auth/login" // Prevent loop on login
+            !AUTH_ENDPOINTS.includes(originalRequest.url)
         ) {
             originalRequest._retry = true;
 

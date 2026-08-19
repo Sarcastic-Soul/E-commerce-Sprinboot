@@ -1,5 +1,6 @@
 package com.anish.e_commerce.service;
 
+import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.repo.ProductRepo;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class ProductService {
         return productRepo
             .findById(id)
             .orElseThrow(() ->
-                new RuntimeException("Product not found with id: " + id)
+                new ResourceNotFoundException("Product not found with id: " + id)
             );
     }
 
@@ -104,7 +105,7 @@ public class ProductService {
         Product existing = productRepo
             .findById(updatedProduct.getId())
             .orElseThrow(() ->
-                new RuntimeException(
+                new ResourceNotFoundException(
                     "Product not found with id: " + updatedProduct.getId()
                 )
             );
@@ -153,7 +154,7 @@ public class ProductService {
         Product existing = productRepo
             .findById(id)
             .orElseThrow(() ->
-                new RuntimeException("Product not found with id: " + id)
+                new ResourceNotFoundException("Product not found with id: " + id)
             );
         if (existing.getImageUrl() != null) {
             imageHandleService.deleteImageByUrl(existing.getImageUrl());
