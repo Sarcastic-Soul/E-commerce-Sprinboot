@@ -20,4 +20,7 @@ frontend/node_modules/
 .env
 .env.production
 
+# Local dev secrets (see backend/secrets.properties.example)
+secrets.properties
+
 backend/src/main/resources/application-prod.properties

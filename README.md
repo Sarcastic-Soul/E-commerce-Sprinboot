@@ -121,17 +121,17 @@ The backend uses Spring Profiles. By default, it runs in `prod` mode, so you mus
 
 1. Open `backend/src/main/resources/application-dev.properties`.
 2. Ensure your local Postgres credentials are correct.
-3. Export the secrets the app reads from the environment. None of these are committed;
-   the app still starts without them, but image upload and payments will not work and
-   JWTs will be signed with a throwaway key that changes on every restart:
+3. Set up your local secrets. Copy the template and fill it in:
 ```bash
-export JWT_SECRET="a-random-string-of-at-least-32-characters"
-export CLOUDINARY_CLOUD_NAME=...
-export CLOUDINARY_API_KEY=...
-export CLOUDINARY_API_SECRET=...
-export RAZORPAY_KEY_ID=rzp_test_...
-export RAZORPAY_KEY_SECRET=...
+cp backend/secrets.properties.example backend/secrets.properties
 ```
+`secrets.properties` is gitignored and dockerignored, so it never leaves your machine.
+It uses the same variable names as the Render environment, and real environment
+variables override it if you want a one-off (`JWT_SECRET=... ./mvnw ...`).
+
+The app still starts with the file blank — you'll just get a warning, image upload and
+payments won't work, and JWTs will be signed with a throwaway key that changes on every
+restart (so you'll be logged out each time the server reloads).
 4. Run the backend using the dev profile:
 ```bash
 cd backend
