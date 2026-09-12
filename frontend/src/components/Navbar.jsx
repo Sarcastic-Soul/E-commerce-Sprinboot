@@ -11,15 +11,16 @@ import {
     LayoutDashboard,
     Heart,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState, useEffect, useRef } from "react"; // Added useRef
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react"; // Added useRef
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext.jsx";
 import NotificationBell from "./NotificationBell";
+import { PRODUCT_CATEGORIES } from "../constants/categories.js";
 
-export function Navbar({ setShowCart, onSearchResults }) {
+export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedTerm, setDebouncedTerm] = useState("");
 
@@ -32,6 +33,7 @@ export function Navbar({ setShowCart, onSearchResults }) {
     const [available, setAvailable] = useState("");
 
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const { darkMode, toggleDarkMode } = useTheme();
     const { cartItemCount } = useCart();
 
@@ -96,7 +98,7 @@ export function Navbar({ setShowCart, onSearchResults }) {
         onSearchResults,
     ]);
 
-    const handleResetFilters = () => {
+    const handleResetFilters = useCallback(() => {
         setSearchTerm(""); // Added search reset
         setDebouncedTerm("");
         setCategory("");
@@ -104,6 +106,19 @@ export function Navbar({ setShowCart, onSearchResults }) {
         setMaxPrice("");
         setSort("asc");
         setAvailable("");
+    }, []);
+
+    // The empty-state "Clear filters" button lives in ProductGrid, which cannot reach
+    // this component's filter state directly — App bumps a counter and we clear here,
+    // so the inputs and the query never disagree about what is filtered.
+    useEffect(() => {
+        if (resetSignal === 0) return;
+        handleResetFilters();
+    }, [resetSignal, handleResetFilters]);
+
+    const handleLogout = async () => {
+        await logout();
+        navigate("/");
     };
 
     return (
@@ -214,7 +229,7 @@ export function Navbar({ setShowCart, onSearchResults }) {
                                     Hi, {user.username}
                                 </span>
                                 <button
-                                    onClick={logout}
+                                    onClick={handleLogout}
                                     title="Logout"
                                     className="flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-red-600 bg-red-500 hover:bg-red-600 transition"
                                 >
@@ -246,12 +261,11 @@ export function Navbar({ setShowCart, onSearchResults }) {
                                 className={`h-12 px-3 border-4 border-black font-bold outline-none cursor-pointer ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
                             >
                                 <option value="">ALL</option>
-                                <option value="ELECTRONICS">ELECTRONICS</option>
-                                <option value="FASHION">FASHION</option>
-                                <option value="HOME_KITCHEN">
-                                    HOME & KITCHEN
-                                </option>
-                                <option value="TOYS_GAMES">TOYS & GAMES</option>
+                                {PRODUCT_CATEGORIES.map((c) => (
+                                    <option key={c.value} value={c.value}>
+                                        {c.label.toUpperCase()}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

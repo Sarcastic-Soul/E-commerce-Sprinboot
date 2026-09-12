@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Edit, ShoppingCart, Trash, Heart } from "lucide-react";
+import { Edit, ShoppingCart, Trash, Heart, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "sonner";
 import { useCart } from "../context/CartContext.jsx";
+import { productImage, PLACEHOLDER } from "../utils/image.js";
 
 export default function ProductDetail({ product }) {
     const { darkMode } = useTheme();
@@ -15,9 +16,10 @@ export default function ProductDetail({ product }) {
 
     const [isWishlisted, setIsWishlisted] = useState(false);
 
-    const imageUrl = product.imageUrl
-        ? product.imageUrl.toString()
-        : "https://picsum.photos/400";
+    // Without a pending flag a double-click fires two POSTs and two toasts.
+    const [adding, setAdding] = useState(false);
+
+    const imageUrl = productImage(product.imageUrl, 800);
     const createdAtDate = new Date(product.createdAt);
     const formattedCreatedAtDate = `${String(createdAtDate.getDate()).padStart(2, "0")}-${String(createdAtDate.getMonth() + 1).padStart(2, "0")}-${createdAtDate.getFullYear()}`;
     const { setCartItemCount } = useCart();
@@ -74,11 +76,14 @@ export default function ProductDetail({ product }) {
     };
 
     const handleAddToCart = async (product) => {
+        if (adding) return;
         try {
             if (!user?.username) {
                 toast.error("User not found");
                 return;
             }
+
+            setAdding(true);
 
             const response = await api.post(
                 `/cart/${user.username}/add`,
@@ -102,6 +107,8 @@ export default function ProductDetail({ product }) {
         } catch (error) {
             console.error("Failed to add to cart:", error);
             toast.error("Failed to add to cart.");
+        } finally {
+            setAdding(false);
         }
     };
 
@@ -116,9 +123,11 @@ export default function ProductDetail({ product }) {
                         src={imageUrl}
                         alt={product.name}
                         loading="lazy"
+                        width={800}
+                        height={800}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                            e.target.src = "https://picsum.photos/400";
+                            e.target.src = PLACEHOLDER;
                         }}
                     />
                 </div>
@@ -208,7 +217,7 @@ export default function ProductDetail({ product }) {
                             }
                             if (product.available) handleAddToCart(product);
                         }}
-                        disabled={!product.available}
+                        disabled={!product.available || adding}
                         className={`w-full py-3 px-6 rounded-lg font-bold text-lg flex items-center justify-center gap-2 border-4 border-black transition-colors duration-300 cursor-pointer
                             shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
                             ${
@@ -220,8 +229,16 @@ export default function ProductDetail({ product }) {
                             }
                             ${product.available ? "active:translate-x-[4px] active:translate-y-[4px] active:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" : ""}`}
                     >
-                        <ShoppingCart size={20} />
-                        {product.available ? "Add to Cart" : "Out of Stock"}
+                        {adding ? (
+                            <Loader2 size={20} className="animate-spin" />
+                        ) : (
+                            <ShoppingCart size={20} />
+                        )}
+                        {!product.available
+                            ? "Out of Stock"
+                            : adding
+                              ? "Adding..."
+                              : "Add to Cart"}
                     </button>
                 </div>
             </div>

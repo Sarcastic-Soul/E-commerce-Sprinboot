@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../api/axios';
+import { PRODUCT_CATEGORIES } from '../constants/categories.js';
 
 export default function UpdateProduct() {
     const { id } = useParams();
@@ -166,16 +167,11 @@ export default function UpdateProduct() {
                         required
                     >
                         <option value="">Select a category</option>
-                        <option value="ELECTRONICS">Electronics</option>
-                        <option value="FASHION">Fashion</option>
-                        <option value="HOME_KITCHEN">Home & Kitchen</option>
-                        <option value="BEAUTY_PERSONAL_CARE">Beauty & Personal Care</option>
-                        <option value="BOOKS_STATIONERY">Books & Stationery</option>
-                        <option value="HEALTH_WELLNESS">Health & Wellness</option>
-                        <option value="TOYS_GAMES">Toys & Games</option>
-                        <option value="SPORTS_OUTDOORS">Sports & Outdoors</option>
-                        <option value="AUTOMOTIVE">Automotive</option>
-                        <option value="GROCERIES_GOURMET_FOOD">Groceries & Gourmet Food</option>
+                        {PRODUCT_CATEGORIES.map((c) => (
+                            <option key={c.value} value={c.value}>
+                                {c.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
 

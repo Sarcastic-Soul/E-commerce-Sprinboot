@@ -67,9 +67,12 @@ export const AuthProvider = ({ children }) => {
             // Ensure local state and storage are cleared regardless of server response
             localStorage.removeItem("token");
             localStorage.removeItem("refreshToken");
+            // No window.location.reload() here: clearing these two pieces of state
+            // already re-renders every consumer, and a reload re-downloaded the whole
+            // bundle. Callers navigate afterwards (AuthProvider sits outside <Router>,
+            // so useNavigate is not available in this file).
             setToken(null);
             setUser(null);
-            window.location.reload();
         }
     };
 

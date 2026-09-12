@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#fef3c7"/>
+  <rect x="8" y="8" width="384" height="384" fill="none" stroke="#000" stroke-width="8"/>
+  <text x="200" y="215" font-family="system-ui, sans-serif" font-size="28"
+        font-weight="900" text-anchor="middle" fill="#000">NO IMAGE</text>
+</svg>

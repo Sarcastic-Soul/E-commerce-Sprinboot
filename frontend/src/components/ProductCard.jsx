@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { useTheme } from "../context/ThemeContext";
 import { toast } from "sonner";
 import api from "../api/axios.js";
 import { useCart } from "../context/CartContext.jsx";
+import { productImage, PLACEHOLDER } from "../utils/image.js";
 
 export default function ProductCard({
     product,
@@ -22,9 +23,10 @@ export default function ProductCard({
         initialIsWishlisted || false,
     );
 
-    const imageUrl = product.imageUrl
-        ? product.imageUrl.toString()
-        : "https://picsum.photos/400";
+    // Without a pending flag a double-click fires two POSTs and two toasts.
+    const [adding, setAdding] = useState(false);
+
+    const imageUrl = productImage(product.imageUrl, 400);
 
     useEffect(() => {
         if (initialIsWishlisted !== null) {
@@ -58,11 +60,14 @@ export default function ProductCard({
     };
 
     const handleAddToCart = async (product) => {
+        if (adding) return;
         try {
             if (!user?.username) {
                 toast.error("User not found");
                 return;
             }
+
+            setAdding(true);
 
             const response = await api.post(
                 `/cart/${user.username}/add`,
@@ -86,6 +91,8 @@ export default function ProductCard({
         } catch (error) {
             console.error("Failed to add to cart:", error);
             toast.error("Failed to add to cart.");
+        } finally {
+            setAdding(false);
         }
     };
 
@@ -100,9 +107,11 @@ export default function ProductCard({
                     src={imageUrl}
                     alt={product.name}
                     loading="lazy"
+                    width={400}
+                    height={256}
                     className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
                     onError={(e) => {
-                        e.target.src = "https://picsum.photos/400";
+                        e.target.src = PLACEHOLDER;
                     }}
                 />
 
@@ -161,7 +170,7 @@ export default function ProductCard({
                             }
                             if (product.available) handleAddToCart(product);
                         }}
-                        disabled={!product.available}
+                        disabled={!product.available || adding}
                         className={`py-2 px-4 rounded font-bold text-sm cursor-pointer
         ${
             product.available
@@ -173,7 +182,11 @@ export default function ProductCard({
         transition-colors duration-300 transform border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
         ${product.available ? "active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" : ""}`}
                     >
-                        <ShoppingCart size={16} />
+                        {adding ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                            <ShoppingCart size={16} />
+                        )}
                     </button>
                 </div>
             </div>

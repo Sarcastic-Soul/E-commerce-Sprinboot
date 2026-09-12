@@ -5,11 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import { toast } from "sonner";
 import { useCart } from "../context/CartContext.jsx";
+import { productImage, PLACEHOLDER } from "../utils/image.js";
 
 export default function Cart({ closeCart }) {
     const { darkMode } = useTheme();
     const { user } = useAuth();
     const cartRef = useRef(null);
+    const closeButtonRef = useRef(null);
     const { setCartItemCount } = useCart();
 
     const [cartItems, setCartItems] = useState([]);
@@ -180,22 +182,60 @@ export default function Cart({ closeCart }) {
             if (cartRef.current) cartRef.current.classList.add("translate-x-0");
         }, 10);
 
+        // Move focus into the panel so keyboard users are not left behind the overlay.
+        closeButtonRef.current?.focus();
+
+        // Stop the page behind the overlay from scrolling.
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
         const handleClickOutside = (e) => {
             if (cartRef.current && !cartRef.current.contains(e.target)) {
                 closeCart();
             }
         };
 
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") {
+                closeCart();
+                return;
+            }
+            if (e.key !== "Tab" || !cartRef.current) return;
+
+            // Focus trap: cycle within the panel instead of escaping behind it.
+            const focusable = cartRef.current.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            );
+            if (focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        };
+
         document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("keydown", handleKeyDown);
         return () => {
             clearTimeout(timer);
+            document.body.style.overflow = previousOverflow;
             document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
         };
     }, [closeCart]);
 
     return (
         <div
             ref={cartRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Shopping cart"
             className={`w-full max-w-md fixed left-0 inset-y-0 z-50 transform -translate-x-full transition-transform duration-500 ease-out
                 ${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-yellow-50 text-gray-900 border-black"}
                 border-r-4 h-full overflow-y-auto shadow-lg`}
@@ -204,7 +244,9 @@ export default function Cart({ closeCart }) {
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-black">YOUR CART</h2>
                     <button
+                        ref={closeButtonRef}
                         onClick={closeCart}
+                        aria-label="Close cart"
                         className={`p-2 rounded-full ${darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-black hover:bg-gray-800 text-white"}`}
                     >
                         <X size={24} />
@@ -235,12 +277,15 @@ export default function Cart({ closeCart }) {
                                     className={`p-4 flex rounded-lg border-2 ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-black"}`}
                                 >
                                     <img
-                                        src={
-                                            item.imageUrl ||
-                                            "https://picsum.photos/400"
-                                        }
+                                        src={productImage(item.imageUrl, 160)}
                                         alt={item.name}
+                                        loading="lazy"
+                                        width={80}
+                                        height={80}
                                         className="w-20 h-20 object-cover rounded mr-4 border-2 border-black"
+                                        onError={(e) => {
+                                            e.target.src = PLACEHOLDER;
+                                        }}
                                     />
                                     <div className="flex-1">
                                         <div className="flex justify-between">

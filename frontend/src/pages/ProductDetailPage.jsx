@@ -30,7 +30,7 @@ export default function ProductDetailPage({ addToCart }) {
         fetchProduct();
     }, [id]);
 
-    if (loading) return <LoadingState darkMode={darkMode} />;
+    if (loading) return <LoadingState variant="page" />;
     if (error) return <ErrorState error={error} darkMode={darkMode} />;
 
     return (

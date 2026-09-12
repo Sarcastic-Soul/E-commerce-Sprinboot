@@ -12,7 +12,12 @@ export const CartProvider = ({ children }) => {
 
     useEffect(() => {
         const fetchCartItems = async () => {
-            if (!user?.username) return;
+            // Logged out: clear the count instead of leaving the previous user's
+            // badge on screen.
+            if (!user?.username) {
+                setCartItemCount(0);
+                return;
+            }
 
             try {
                 const res = await api.get(`/cart/${user.username}`);

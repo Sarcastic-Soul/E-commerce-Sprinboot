@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react"; // Added Pagination Icons
 import { Navbar } from "./components/Navbar";
 import ProductGrid from "./components/ProductGrid";
@@ -8,8 +8,6 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import LoadingState from "./components/LoadingState";
 import ErrorState from "./components/ErrorState";
 import Cart from "./components/Cart";
-import AddProduct from "./pages/AddProductPage";
-import UpdateProduct from "./pages/UpdateProductPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
@@ -21,8 +19,13 @@ import ToastProvider from "./components/ToastProvider";
 import api from "./api/axios";
 import { CartProvider } from "./context/CartContext.jsx";
 import OrderHistoryPage from "./pages/OrderHistoryPage.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
 import WishlistPage from "./pages/WishlistPage.jsx";
+
+// Admin-only routes. recharts (~360 kB) is pulled in by AdminDashboard, so keeping
+// these out of the initial bundle halves what every visitor downloads.
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
+const AddProduct = lazy(() => import("./pages/AddProductPage"));
+const UpdateProduct = lazy(() => import("./pages/UpdateProductPage"));
 
 function InnerApp() {
     const [products, setProducts] = useState([]);
@@ -34,6 +37,7 @@ function InnerApp() {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [isFiltering, setIsFiltering] = useState(false);
+    const [filterResetSignal, setFilterResetSignal] = useState(0);
 
     const { darkMode } = useTheme();
 
@@ -45,7 +49,7 @@ function InnerApp() {
 
             // Extract the 'content' array from the Spring Boot Page object
             setProducts(response.data.content || response.data);
-            setTotalPages(response.data.page?.totalPages || 1);
+            setTotalPages(response.data.totalPages || 1);
             setError(null);
         } catch (err) {
             setError("Failed to fetch products. Please try again later.");
@@ -63,6 +67,11 @@ function InnerApp() {
     }, [currentPage, isFiltering, fetchProducts]);
 
     // Handle data coming from the Navbar (Search & Filters)
+    const clearFilters = useCallback(
+        () => setFilterResetSignal((n) => n + 1),
+        [],
+    );
+
     const handleSearchResults = useCallback((data) => {
         if (data?.isReset) {
             setIsFiltering(false);
@@ -74,7 +83,7 @@ function InnerApp() {
 
         if (data?.content) {
             setProducts(data.content);
-            setTotalPages(data.page?.totalPages || 1);
+            setTotalPages(data.totalPages || 1);
         } else {
             setProducts(Array.isArray(data) ? data : []);
             setTotalPages(1);
@@ -92,6 +101,7 @@ function InnerApp() {
             <Navbar
                 setShowCart={setShowCart}
                 onSearchResults={handleSearchResults}
+                resetSignal={filterResetSignal}
             />
 
             <main className="container mx-auto px-4 py-8">
@@ -105,7 +115,14 @@ function InnerApp() {
                                 <ErrorState error={error} />
                             ) : (
                                 <div className="flex flex-col pb-8">
-                                    <ProductGrid products={products} />
+                                    <ProductGrid
+                                        products={products}
+                                        onClearFilters={
+                                            isFiltering
+                                                ? clearFilters
+                                                : undefined
+                                        }
+                                    />
 
                                     {/* Neo-brutalist Pagination Controls */}
                                     {totalPages > 1 && !isFiltering && (
@@ -160,7 +177,9 @@ function InnerApp() {
                         path="/add-product"
                         element={
                             <ProtectedRoute role="ADMIN">
-                                <AddProduct />
+                                <Suspense fallback={<LoadingState variant="page" />}>
+                                    <AddProduct />
+                                </Suspense>
                             </ProtectedRoute>
                         }
                     />
@@ -168,7 +187,9 @@ function InnerApp() {
                         path="/update-product/:id"
                         element={
                             <ProtectedRoute role="ADMIN">
-                                <UpdateProduct />
+                                <Suspense fallback={<LoadingState variant="page" />}>
+                                    <UpdateProduct />
+                                </Suspense>
                             </ProtectedRoute>
                         }
                     />
@@ -184,7 +205,9 @@ function InnerApp() {
                         path="/admin/dashboard"
                         element={
                             <ProtectedRoute role="ADMIN">
-                                <AdminDashboard />
+                                <Suspense fallback={<LoadingState variant="page" />}>
+                                    <AdminDashboard />
+                                </Suspense>
                             </ProtectedRoute>
                         }
                     />

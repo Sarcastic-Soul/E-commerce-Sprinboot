@@ -43,7 +43,7 @@ export default function AdminDashboard() {
         fetchStats();
     }, []);
 
-    if (loading) return <LoadingState />;
+    if (loading) return <LoadingState variant="page" />;
     if (!stats)
         return (
             <div className="text-center mt-10 font-bold text-xl">

@@ -38,7 +38,7 @@ export default function OrderHistoryPage() {
         }
     };
 
-    if (loading) return <LoadingState />;
+    if (loading) return <LoadingState variant="page" />;
 
     return (
         <div className="max-w-4xl mx-auto mt-8">
