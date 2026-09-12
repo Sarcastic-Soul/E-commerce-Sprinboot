@@ -4,9 +4,10 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 
-# Install dependencies and build
-COPY frontend/package*.json ./
-RUN npm install
+# Install pnpm and dependencies
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
 
 # Pass the Razorpay Key to Vite during the build
@@ -14,7 +15,7 @@ ARG VITE_RAZORPAY_KEY_ID
 ENV VITE_RAZORPAY_KEY_ID=$VITE_RAZORPAY_KEY_ID
 
 # Output goes to /app/frontend/dist
-RUN npm run build
+RUN pnpm run build
 
 # ==========================================
 # Stage 2: Build Backend (Spring Boot)
