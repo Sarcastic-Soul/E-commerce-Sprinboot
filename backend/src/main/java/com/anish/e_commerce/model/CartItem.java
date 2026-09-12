@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(
+    name = "cart_item",
+    indexes = { @Index(name = "idx_cart_item_cart_id", columnList = "cart_id") }
+)
 @Getter
 @Setter
 @NoArgsConstructor

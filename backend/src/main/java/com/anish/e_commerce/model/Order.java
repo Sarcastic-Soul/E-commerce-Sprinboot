@@ -8,7 +8,18 @@ import java.util.List;
 import lombok.*;
 
 @Entity
-@Table(name = "orders")
+@Table(
+    name = "orders",
+    indexes = {
+        // Postgres does not index FK columns automatically; both of these were
+        // sequential scans, and razorpay_order_id is hit on every payment callback.
+        @Index(name = "idx_orders_user_id", columnList = "user_id"),
+        @Index(
+            name = "idx_orders_razorpay_order_id",
+            columnList = "razorpay_order_id"
+        ),
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,11 +42,12 @@ public class Order {
 
     private String razorpayOrderId;
 
+    // Lazy: EAGER fired an extra query per order on every read. The one path that
+    // serializes this outside a transaction uses an @EntityGraph in OrderRepo.
     @OneToMany(
         mappedBy = "order",
         cascade = CascadeType.ALL,
-        orphanRemoval = true,
-        fetch = FetchType.EAGER
+        orphanRemoval = true
     )
     private List<OrderItem> items = new ArrayList<>();
 }

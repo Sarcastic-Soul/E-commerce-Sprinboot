@@ -1,5 +1,6 @@
 package com.anish.e_commerce.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +19,9 @@ public class User {
     @Column(unique = true)
     private String username;
 
+    // Never serialize the hash. Wishlist/Notification/Order all embed a User,
+    // so without this the BCrypt hash goes out on three separate endpoints.
+    @JsonIgnore
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER)

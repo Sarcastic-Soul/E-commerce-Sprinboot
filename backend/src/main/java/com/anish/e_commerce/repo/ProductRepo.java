@@ -34,4 +34,9 @@ public interface ProductRepo extends JpaRepository<Product, Integer> {
             "LOWER(p.category) LIKE LOWER(CONCAT('%', :keyword, '%'))"
     )
     List<Product> searchProducts(@Param("keyword") String Keyword);
+
+    @Query(
+        "SELECT COUNT(p) FROM Product p WHERE p.available = false OR p.quantity = 0"
+    )
+    long countOutOfStock();
 }

@@ -8,7 +8,12 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "notifications")
+@Table(
+    name = "notifications",
+    indexes = {
+        @Index(name = "idx_notifications_user_id", columnList = "user_id"),
+    }
+)
 public class Notification {
 
     @Id

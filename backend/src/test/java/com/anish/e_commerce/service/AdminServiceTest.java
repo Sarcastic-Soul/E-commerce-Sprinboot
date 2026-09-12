@@ -4,14 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.anish.e_commerce.dto.AdminStatsResponse;
-import com.anish.e_commerce.model.Order;
-import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.repo.OrderRepo;
 import com.anish.e_commerce.repo.ProductRepo;
 import com.anish.e_commerce.repo.UserRepo;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,80 +32,80 @@ public class AdminServiceTest {
 
     @Test
     void testGetStats_CalculatesCorrectly() {
-        // Arrange: Mock Users and Products
         when(userRepo.count()).thenReturn(5L);
         when(productRepo.count()).thenReturn(10L);
+        when(productRepo.countOutOfStock()).thenReturn(1L);
+        when(orderRepo.count()).thenReturn(3L);
+        when(orderRepo.sumTotalRevenue()).thenReturn(new BigDecimal("300.00"));
 
-        // Arrange: Mock Out-of-Stock Products
-        Product availableProduct = new Product();
-        availableProduct.setAvailable(true);
-        availableProduct.setQuantity(5);
-
-        Product outOfStockProduct = new Product();
-        outOfStockProduct.setAvailable(false);
-        outOfStockProduct.setQuantity(0);
-
-        when(productRepo.findAll()).thenReturn(
-            List.of(availableProduct, outOfStockProduct)
+        // year, month, day, count, revenue — as the aggregate query returns them.
+        when(orderRepo.findDailyOrderStats()).thenReturn(
+            List.of(
+                new Object[] { 2026, 3, 25, 1L, new BigDecimal("100.00") },
+                new Object[] { 2026, 3, 26, 2L, new BigDecimal("200.00") }
+            )
         );
 
-        // Arrange: Mock Orders (Two orders today, one yesterday)
-        LocalDateTime today = LocalDateTime.now();
-        LocalDateTime yesterday = today.minusDays(1);
-
-        Order order1 = new Order();
-        order1.setTotalAmount(new BigDecimal("50.00"));
-        order1.setCreatedAt(today);
-
-        Order order2 = new Order();
-        order2.setTotalAmount(new BigDecimal("150.00"));
-        order2.setCreatedAt(today);
-
-        Order order3 = new Order();
-        order3.setTotalAmount(new BigDecimal("100.00"));
-        order3.setCreatedAt(yesterday);
-
-        when(orderRepo.findAll()).thenReturn(List.of(order1, order2, order3));
-
-        // Act
         AdminStatsResponse stats = adminService.getStats();
 
-        // Assert: Basic Counts
         assertEquals(5L, stats.getTotalUsers());
         assertEquals(10L, stats.getTotalProducts());
         assertEquals(3L, stats.getTotalOrders());
-        assertEquals(1L, stats.getOutOfStockProducts()); // Only 1 product is out of stock
-
-        // Assert: Total Revenue (50 + 150 + 100 = 300)
+        assertEquals(1L, stats.getOutOfStockProducts());
         assertEquals(new BigDecimal("300.00"), stats.getTotalRevenue());
 
-        // Assert: Chart Trends
-        assertEquals(2, stats.getOrdersOverTime().size()); // 2 distinct days
+        assertEquals(2, stats.getOrdersOverTime().size());
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd");
-        String todayString = today.format(formatter);
-        String yesterdayString = yesterday.format(formatter);
-
-        // Verify today's aggregated stats (2 orders, $200 total)
-        AdminStatsResponse.DailyOrderStat todayStat = stats
+        AdminStatsResponse.DailyOrderStat first = stats
             .getOrdersOverTime()
-            .stream()
-            .filter(s -> s.getDate().equals(todayString))
-            .findFirst()
-            .orElseThrow();
+            .get(0);
+        assertEquals("Mar 25", first.getDate());
+        assertEquals(1L, first.getCount());
+        assertEquals(new BigDecimal("100.00"), first.getRevenue());
 
-        assertEquals(2, todayStat.getCount());
-        assertEquals(new BigDecimal("200.00"), todayStat.getRevenue());
-
-        // Verify yesterday's aggregated stats (1 order, $100 total)
-        AdminStatsResponse.DailyOrderStat yesterdayStat = stats
+        AdminStatsResponse.DailyOrderStat second = stats
             .getOrdersOverTime()
-            .stream()
-            .filter(s -> s.getDate().equals(yesterdayString))
-            .findFirst()
-            .orElseThrow();
+            .get(1);
+        assertEquals("Mar 26", second.getDate());
+        assertEquals(2L, second.getCount());
+        assertEquals(new BigDecimal("200.00"), second.getRevenue());
+    }
 
-        assertEquals(1, yesterdayStat.getCount());
-        assertEquals(new BigDecimal("100.00"), yesterdayStat.getRevenue());
+    /**
+     * Regression: the old implementation grouped with Collectors.groupingBy, which
+     * returns a HashMap, so the chart's X-axis came back in arbitrary order. The
+     * database now does the ordering — this asserts the service preserves it.
+     */
+    @Test
+    void testGetStats_OrdersOverTimeIsChronological() {
+        when(userRepo.count()).thenReturn(0L);
+        when(productRepo.count()).thenReturn(0L);
+        when(productRepo.countOutOfStock()).thenReturn(0L);
+        when(orderRepo.count()).thenReturn(4L);
+        when(orderRepo.sumTotalRevenue()).thenReturn(BigDecimal.ZERO);
+
+        // Spans a year boundary — dates that "MMM dd" alone would collapse together.
+        when(orderRepo.findDailyOrderStats()).thenReturn(
+            List.of(
+                new Object[] { 2025, 12, 30, 1L, new BigDecimal("10.00") },
+                new Object[] { 2026, 1, 2, 1L, new BigDecimal("20.00") },
+                new Object[] { 2026, 3, 25, 1L, new BigDecimal("30.00") },
+                new Object[] { 2026, 12, 30, 1L, new BigDecimal("40.00") }
+            )
+        );
+
+        List<AdminStatsResponse.DailyOrderStat> trends = adminService
+            .getStats()
+            .getOrdersOverTime();
+
+        assertEquals(
+            List.of("Dec 30", "Jan 02", "Mar 25", "Dec 30"),
+            trends.stream().map(AdminStatsResponse.DailyOrderStat::getDate).toList()
+        );
+
+        // Same "MMM dd" label, different years — kept as distinct buckets.
+        assertEquals(4, trends.size());
+        assertEquals(new BigDecimal("10.00"), trends.get(0).getRevenue());
+        assertEquals(new BigDecimal("40.00"), trends.get(3).getRevenue());
     }
 }

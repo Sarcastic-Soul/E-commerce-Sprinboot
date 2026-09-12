@@ -7,7 +7,13 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "wishlist")
+@Table(
+    name = "wishlist",
+    indexes = {
+        @Index(name = "idx_wishlist_user_id", columnList = "user_id"),
+        @Index(name = "idx_wishlist_product_id", columnList = "product_id"),
+    }
+)
 public class Wishlist {
 
     @Id

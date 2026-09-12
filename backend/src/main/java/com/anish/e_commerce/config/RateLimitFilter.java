@@ -41,10 +41,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private Bucket createNewBucket() {
+    /**
+     * Auth and catalog need opposite limits. 10/min is a brute-force budget; catalog
+     * browsing blows past 30/min on its own — the search box fires one request per
+     * 500ms debounce pause, plus one per filter change and per page turn.
+     */
+    private static final int AUTH_LIMIT = 10;
+    private static final int CATALOG_LIMIT = 120;
+
+    private Bucket createNewBucket(int capacity) {
         Bandwidth limit = Bandwidth.classic(
-            30,
-            Refill.greedy(30, Duration.ofMinutes(1))
+            capacity,
+            Refill.greedy(capacity, Duration.ofMinutes(1))
         );
         return Bucket.builder().addLimit(limit).build();
     }
@@ -77,14 +85,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String path = request.getRequestURI();
 
-        if (
-            path.startsWith("/api/auth/") ||
+        Integer capacity = null;
+        String scope = null;
+        if (path.startsWith("/api/auth/")) {
+            capacity = AUTH_LIMIT;
+            scope = "auth";
+        } else if (
             path.startsWith("/api/products/") ||
             path.startsWith("/api/product/")
         ) {
-            String ip = resolveClientIp(request);
+            capacity = CATALOG_LIMIT;
+            scope = "catalog";
+        }
 
-            Bucket bucket = cache.computeIfAbsent(ip, k -> createNewBucket());
+        if (capacity != null) {
+            // Scope is part of the key so the two budgets stay separate per client.
+            String key = scope + ":" + resolveClientIp(request);
+            final int cap = capacity;
+
+            Bucket bucket = cache.computeIfAbsent(key, k -> createNewBucket(cap));
 
             if (!bucket.tryConsume(1)) {
                 // 1. Set Status and Content Type
