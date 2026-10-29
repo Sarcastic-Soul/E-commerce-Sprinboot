@@ -1,5 +1,6 @@
 package com.anish.e_commerce.controller;
 
+import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.Notification;
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.model.User;
@@ -28,7 +29,11 @@ public class UserController {
 
     // Helper to get logged-in user
     private User getCurrentUser(Authentication auth) {
-        return userRepo.findByUsername(auth.getName()).orElseThrow();
+        return userRepo
+            .findByUsername(auth.getName())
+            .orElseThrow(() ->
+                new ResourceNotFoundException("User not found: " + auth.getName())
+            );
     }
 
     @Transactional
@@ -47,7 +52,9 @@ public class UserController {
         } else {
             Product product = productRepo
                 .findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Product not found with id: " + productId)
+                );
             Wishlist wishlist = new Wishlist();
             wishlist.setUser(user);
             wishlist.setProduct(product);

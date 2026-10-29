@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
@@ -245,7 +246,9 @@ export default function App() {
                 <CartProvider>
                     <Router>
                         <ToastProvider />
-                        <InnerApp />
+                        <ErrorBoundary>
+                            <InnerApp />
+                        </ErrorBoundary>
                     </Router>
                 </CartProvider>
             </ThemeProvider>

@@ -23,6 +23,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @RequiredArgsConstructor
@@ -40,7 +42,25 @@ public class SecurityConfig {
         throws Exception {
         return http
             .cors(Customizer.withDefaults())
-            .csrf(AbstractHttpConfigurer::disable)
+            // Auth now lives in httpOnly cookies, which the browser attaches to
+            // cross-site requests automatically (SameSite=None is required for the
+            // cross-origin prod deploy) — that reopens CSRF, which was a non-issue
+            // back when the token only ever lived in a JS-attached Authorization
+            // header. Double-submit cookie: the XSRF-TOKEN cookie is JS-readable,
+            // the frontend echoes it back as a header, forgeable cross-site requests
+            // cannot read it to do the same. /api/auth/** is exempt: login/signup
+            // mint fresh tokens rather than act on an existing session, and refresh
+            // /logout are already gated by possession of the refresh-token cookie.
+            .csrf(csrf ->
+                csrf
+                    .csrfTokenRepository(
+                        CookieCsrfTokenRepository.withHttpOnlyFalse()
+                    )
+                    .csrfTokenRequestHandler(
+                        new CsrfTokenRequestAttributeHandler()
+                    )
+                    .ignoringRequestMatchers("/api/auth/**")
+            )
             .authorizeHttpRequests(auth ->
                 auth
                     // 0. Allow Swagger UI & OpenAPI Docs

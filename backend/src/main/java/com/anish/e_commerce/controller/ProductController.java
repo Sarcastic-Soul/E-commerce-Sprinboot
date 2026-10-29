@@ -5,6 +5,8 @@ import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.service.ImageHandleService;
 import com.anish.e_commerce.service.ProductService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -14,12 +16,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Validated
 public class ProductController {
 
     private final ProductService productService;
@@ -27,8 +31,8 @@ public class ProductController {
 
     @GetMapping("/products")
     public ResponseEntity<Page<Product>> getAllProducts(
-        @RequestParam(defaultValue = "0") int page, // Default to page 0 (Spring is 0-indexed)
-        @RequestParam(defaultValue = "12") int size // Default to 12 items per page
+        @RequestParam(defaultValue = "0") @Min(0) int page, // Default to page 0 (Spring is 0-indexed)
+        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size // Default to 12 items per page, capped so a caller cannot force a full-table load
     ) {
         Page<Product> productPage = productService.getAllProducts(page, size);
         return new ResponseEntity<>(productPage, HttpStatus.OK);

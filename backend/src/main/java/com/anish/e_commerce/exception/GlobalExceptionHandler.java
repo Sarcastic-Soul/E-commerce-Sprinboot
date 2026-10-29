@@ -1,6 +1,7 @@
 package com.anish.e_commerce.exception;
 
 import com.anish.e_commerce.dto.ApiErrorResponse;
+import com.anish.e_commerce.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
@@ -81,13 +82,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // Handle general Runtime Exceptions
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiErrorResponse> handleRuntimeExceptions(
-        RuntimeException ex,
+    // Handle expected business-rule violations (empty cart, insufficient stock, ...).
+    // Anything that is NOT a BusinessException (a plain RuntimeException, an NPE, a
+    // bug) falls through to handleGlobalExceptions below and comes back as a 500 —
+    // it is not the caller's fault, and its message must not leak to the client.
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusinessException(
+        BusinessException ex,
         HttpServletRequest request
     ) {
-        log.error("Runtime exception occurred: ", ex);
         ApiErrorResponse response = buildErrorResponse(
             HttpStatus.BAD_REQUEST,
             "Bad Request",

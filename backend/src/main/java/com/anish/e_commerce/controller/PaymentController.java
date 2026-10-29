@@ -6,6 +6,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,7 +20,8 @@ public class PaymentController {
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(
-        @RequestBody Map<String, String> payload
+        @RequestBody Map<String, String> payload,
+        Authentication authentication
     ) {
         String razorpayOrderId = payload.get("razorpay_order_id");
         String razorpayPaymentId = payload.get("razorpay_payment_id");
@@ -32,7 +35,10 @@ public class PaymentController {
 
         if (isValidSignature) {
             try {
-                orderService.processSuccessfulPayment(razorpayOrderId);
+                orderService.processSuccessfulPayment(
+                    razorpayOrderId,
+                    authentication.getName()
+                );
                 return ResponseEntity.ok(
                     Map.of(
                         "status",
@@ -40,6 +46,10 @@ public class PaymentController {
                         "message",
                         "Payment verified and order completed."
                     )
+                );
+            } catch (AccessDeniedException e) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    Map.of("error", e.getMessage())
                 );
             } catch (RuntimeException e) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
@@ -55,7 +65,8 @@ public class PaymentController {
 
     @PostMapping("/fail")
     public ResponseEntity<?> failPayment(
-        @RequestBody Map<String, String> payload
+        @RequestBody Map<String, String> payload,
+        Authentication authentication
     ) {
         String razorpayOrderId = payload.get("razorpay_order_id");
 
@@ -66,7 +77,10 @@ public class PaymentController {
         }
 
         try {
-            orderService.processFailedPayment(razorpayOrderId);
+            orderService.processFailedPayment(
+                razorpayOrderId,
+                authentication.getName()
+            );
             return ResponseEntity.ok(
                 Map.of(
                     "status",
@@ -74,6 +88,10 @@ public class PaymentController {
                     "message",
                     "Payment failed. Order marked as rejected."
                 )
+            );
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                Map.of("error", e.getMessage())
             );
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(

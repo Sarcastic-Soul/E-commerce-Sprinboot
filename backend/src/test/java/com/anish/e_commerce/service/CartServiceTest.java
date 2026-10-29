@@ -54,6 +54,7 @@ public class CartServiceTest {
         testProduct.setId(1);
         testProduct.setName("Test Duck");
         testProduct.setPrice(new BigDecimal("19.99"));
+        testProduct.setQuantity(10);
 
         testCart = new Cart();
         testCart.setUser(testUser);
@@ -134,6 +135,21 @@ public class CartServiceTest {
         assertEquals(1, testCart.getItems().size()); // Should still only have 1 item type
         assertEquals(5, testCart.getItems().get(0).getQuantity()); // But quantity should update to 5
         verify(cartRepo, times(1)).save(testCart);
+    }
+
+    @Test
+    void testAddOrUpdateItem_RejectsQuantityAboveAvailableStock() {
+        // Arrange: only 10 in stock, user asks for 11
+        when(productRepo.findById(1)).thenReturn(Optional.of(testProduct));
+
+        // Act & Assert
+        com.anish.e_commerce.exception.BusinessException exception = assertThrows(
+            com.anish.e_commerce.exception.BusinessException.class,
+            () -> cartService.addOrUpdateItem("testuser", 1, 11)
+        );
+
+        assertTrue(exception.getMessage().contains("Test Duck"));
+        verify(cartRepo, never()).save(any(Cart.class));
     }
 
     @Test

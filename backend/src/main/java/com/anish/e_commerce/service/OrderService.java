@@ -1,5 +1,6 @@
 package com.anish.e_commerce.service;
 
+import com.anish.e_commerce.exception.BusinessException;
 import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.*;
 import com.anish.e_commerce.repo.OrderRepo;
@@ -9,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,14 +27,14 @@ public class OrderService {
         Cart cart = cartService.getCartByUsername(username);
 
         if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cart is empty");
+            throw new BusinessException("Cart is empty");
         }
 
         // Check stock for the whole cart up front, before building the order.
         for (CartItem item : cart.getItems()) {
             Product product = item.getProduct();
             if (product.getQuantity() < item.getQuantity()) {
-                throw new RuntimeException(
+                throw new BusinessException(
                     "Sorry, " +
                         product.getName() +
                         " does not have enough stock."
@@ -85,12 +87,13 @@ public class OrderService {
     }
 
     @Transactional
-    public void processSuccessfulPayment(String razorpayOrderId) {
+    public void processSuccessfulPayment(String razorpayOrderId, String username) {
         Order order = orderRepo
             .findByRazorpayOrderId(razorpayOrderId)
             .orElseThrow(() ->
                 new ResourceNotFoundException("Order not found")
             );
+        assertOwnership(order, username);
 
         if ("COMPLETED".equals(order.getStatus())) {
             return; // Prevent duplicate deductions if called multiple times
@@ -123,12 +126,13 @@ public class OrderService {
     }
 
     @Transactional
-    public void processFailedPayment(String razorpayOrderId) {
+    public void processFailedPayment(String razorpayOrderId, String username) {
         Order order = orderRepo
             .findByRazorpayOrderId(razorpayOrderId)
             .orElseThrow(() ->
                 new ResourceNotFoundException("Order not found")
             );
+        assertOwnership(order, username);
 
         if ("PENDING".equals(order.getStatus())) {
             order.setStatus("REJECTED");
@@ -138,5 +142,14 @@ public class OrderService {
 
     public List<Order> getUserOrders(String username) {
         return orderRepo.findByUser_UsernameOrderByCreatedAtDesc(username);
+    }
+
+    // The payment callbacks are keyed only by the Razorpay order id, which is not a
+    // secret — without this check, an authenticated user could complete or fail
+    // someone else's order just by guessing/observing that id.
+    private void assertOwnership(Order order, String username) {
+        if (!order.getUser().getUsername().equals(username)) {
+            throw new AccessDeniedException("This order does not belong to you.");
+        }
     }
 }

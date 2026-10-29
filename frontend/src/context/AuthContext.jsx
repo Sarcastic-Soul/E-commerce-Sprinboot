@@ -1,44 +1,43 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import axios from "../api/axios";
 
 const AuthContext = createContext();
 
-// Helper function to decode token IMMEDIATELY (No useEffect delays)
-const getUserFromToken = (token) => {
-    if (!token) return null;
-    try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        const role =
-            payload.role ||
-            (Array.isArray(payload.roles) ? payload.roles[0] : undefined);
-        return { username: payload.sub, role };
-    } catch (e) {
-        console.error("Invalid token", e);
-        return null;
-    }
-};
+const toUser = (data) => ({
+    username: data.username,
+    role: Array.isArray(data.roles) ? data.roles[0] : data.roles,
+});
 
 export const AuthProvider = ({ children }) => {
-    const initialToken = localStorage.getItem("token");
+    const [user, setUser] = useState(null);
+    // The token is an httpOnly cookie now, invisible to JS, so there is nothing to
+    // read synchronously on mount. /auth/me tells us who (if anyone) it belongs to;
+    // authLoading gates ProtectedRoute so it doesn't redirect a logged-in user to
+    // /login just because that check hasn't resolved yet.
+    const [authLoading, setAuthLoading] = useState(true);
 
-    // Initialize token and user synchronously!
-    const [token, setToken] = useState(initialToken);
-    const [user, setUser] = useState(() => getUserFromToken(initialToken));
-
-    const saveTokens = (newToken, newRefreshToken) => {
-        localStorage.setItem("token", newToken);
-        if (newRefreshToken) {
-            localStorage.setItem("refreshToken", newRefreshToken);
-        }
-        setToken(newToken);
-        setUser(getUserFromToken(newToken));
-    };
+    useEffect(() => {
+        let cancelled = false;
+        axios
+            .get("/auth/me")
+            .then((res) => {
+                if (!cancelled) setUser(toUser(res.data));
+            })
+            .catch(() => {
+                if (!cancelled) setUser(null);
+            })
+            .finally(() => {
+                if (!cancelled) setAuthLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const login = async (username, password) => {
         try {
             const res = await axios.post("/auth/login", { username, password });
-            // Save both the access token and the refresh token returned from the backend
-            saveTokens(res.data.token, res.data.refreshToken);
+            setUser(toUser(res.data));
         } catch (err) {
             throw new Error("Login failed");
         }
@@ -49,35 +48,27 @@ export const AuthProvider = ({ children }) => {
             await axios.post("/auth/signup", { username, password });
             await login(username, password); // auto-login
         } catch (err) {
-            const message = err.response?.data || "Signup failed";
+            const message = err.response?.data?.message || "Signup failed";
             throw new Error(message);
         }
     };
 
     const logout = async () => {
         try {
-            const refreshToken = localStorage.getItem("refreshToken");
-            if (refreshToken) {
-                // Optionally notify backend to revoke the token in Redis
-                await axios.post("/auth/logout", { refreshToken });
-            }
+            await axios.post("/auth/logout");
         } catch (err) {
             console.error("Logout request failed on server", err);
         } finally {
-            // Ensure local state and storage are cleared regardless of server response
-            localStorage.removeItem("token");
-            localStorage.removeItem("refreshToken");
-            // No window.location.reload() here: clearing these two pieces of state
-            // already re-renders every consumer, and a reload re-downloaded the whole
-            // bundle. Callers navigate afterwards (AuthProvider sits outside <Router>,
-            // so useNavigate is not available in this file).
-            setToken(null);
+            // No window.location.reload() here: clearing this one piece of state
+            // already re-renders every consumer, and a reload re-downloaded the
+            // whole bundle. Callers navigate afterwards (AuthProvider sits outside
+            // <Router>, so useNavigate is not available in this file).
             setUser(null);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, signup, logout }}>
+        <AuthContext.Provider value={{ user, authLoading, login, signup, logout }}>
             {children}
         </AuthContext.Provider>
     );

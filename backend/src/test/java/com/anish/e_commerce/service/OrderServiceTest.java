@@ -168,7 +168,7 @@ public class OrderServiceTest {
             Optional.of(order)
         );
 
-        orderService.processSuccessfulPayment("order_rzp_123");
+        orderService.processSuccessfulPayment("order_rzp_123", "testuser");
 
         assertEquals("COMPLETED", order.getStatus());
         assertEquals(8, testProduct.getQuantity()); // 10 - 2
@@ -195,7 +195,7 @@ public class OrderServiceTest {
             Optional.of(order)
         );
 
-        orderService.processSuccessfulPayment("order_rzp_123");
+        orderService.processSuccessfulPayment("order_rzp_123", "testuser");
 
         // 10 - 2 (ordered), NOT 10 - 9 (whatever is sitting in the cart now)
         assertEquals(8, testProduct.getQuantity());
@@ -210,7 +210,7 @@ public class OrderServiceTest {
             Optional.of(order)
         );
 
-        orderService.processSuccessfulPayment("order_rzp_123");
+        orderService.processSuccessfulPayment("order_rzp_123", "testuser");
 
         assertEquals(0, testProduct.getQuantity());
         assertFalse(testProduct.isAvailable());
@@ -225,7 +225,7 @@ public class OrderServiceTest {
             Optional.of(order)
         );
 
-        orderService.processSuccessfulPayment("order_rzp_123");
+        orderService.processSuccessfulPayment("order_rzp_123", "testuser");
 
         assertEquals(10, testProduct.getQuantity()); // no second deduction
         verify(productRepo, never()).save(any(Product.class));
@@ -239,10 +239,49 @@ public class OrderServiceTest {
             Optional.of(order)
         );
 
-        orderService.processFailedPayment("order_rzp_123");
+        orderService.processFailedPayment("order_rzp_123", "testuser");
 
         assertEquals("REJECTED", order.getStatus());
         assertEquals(10, testProduct.getQuantity());
         verify(productRepo, never()).save(any(Product.class));
+    }
+
+    // ---------- ownership: the razorpay order id is not a secret ----------
+
+    @Test
+    void testProcessSuccessfulPayment_RejectsCallerWhoDoesNotOwnTheOrder() {
+        Order order = pendingOrder(2);
+        when(orderRepo.findByRazorpayOrderId("order_rzp_123")).thenReturn(
+            Optional.of(order)
+        );
+
+        assertThrows(
+            org.springframework.security.access.AccessDeniedException.class,
+            () ->
+                orderService.processSuccessfulPayment(
+                    "order_rzp_123",
+                    "mallory"
+                )
+        );
+
+        assertEquals("PENDING", order.getStatus());
+        assertEquals(10, testProduct.getQuantity());
+        verify(productRepo, never()).save(any(Product.class));
+        verify(cartService, never()).clearCart(anyString());
+    }
+
+    @Test
+    void testProcessFailedPayment_RejectsCallerWhoDoesNotOwnTheOrder() {
+        Order order = pendingOrder(2);
+        when(orderRepo.findByRazorpayOrderId("order_rzp_123")).thenReturn(
+            Optional.of(order)
+        );
+
+        assertThrows(
+            org.springframework.security.access.AccessDeniedException.class,
+            () -> orderService.processFailedPayment("order_rzp_123", "mallory")
+        );
+
+        assertEquals("PENDING", order.getStatus());
     }
 }

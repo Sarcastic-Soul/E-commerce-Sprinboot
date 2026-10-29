@@ -20,6 +20,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProductService {
 
+    // Neither /products/filter nor /products/search paginates on the frontend (a
+    // real pagination UI for the filtered view is a separate, deliberately deferred
+    // change) — this cap just stops either from becoming an unbounded full-table
+    // scan as the catalog grows, without changing the response shape.
+    private static final int MAX_UNPAGINATED_RESULTS = 200;
+
     @Autowired
     private ProductRepo productRepo;
 
@@ -59,6 +65,7 @@ public class ProductService {
         Sort sort = "desc".equalsIgnoreCase(sortDir)
             ? Sort.by("price").descending()
             : Sort.by("price").ascending();
+        Pageable pageable = PageRequest.of(0, MAX_UNPAGINATED_RESULTS, sort);
 
         return productRepo.filterProducts(
             keyword,
@@ -66,7 +73,7 @@ public class ProductService {
             minPrice,
             maxPrice,
             available,
-            sort
+            pageable
         );
     }
 
@@ -163,6 +170,9 @@ public class ProductService {
     }
 
     public List<Product> searchProducts(String keyword) {
-        return productRepo.searchProducts(keyword);
+        return productRepo.searchProducts(
+            keyword,
+            PageRequest.of(0, MAX_UNPAGINATED_RESULTS)
+        );
     }
 }

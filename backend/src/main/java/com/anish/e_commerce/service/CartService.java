@@ -1,6 +1,8 @@
 package com.anish.e_commerce.service;
 
 import com.anish.e_commerce.dto.CartItemResponse;
+import com.anish.e_commerce.exception.BusinessException;
+import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.Cart;
 import com.anish.e_commerce.model.CartItem;
 import com.anish.e_commerce.model.Product;
@@ -31,7 +33,13 @@ public class CartService {
     public Cart getCartByUsername(String username) {
         return cartRepo.findByUser_Username(username).orElseGet(() -> {
             Cart newCart = new Cart();
-            newCart.setUser(userRepo.findByUsername(username).orElseThrow());
+            newCart.setUser(
+                userRepo
+                    .findByUsername(username)
+                    .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found: " + username)
+                    )
+            );
             newCart.setItems(new ArrayList<>());
             return cartRepo.save(newCart);
         });
@@ -39,7 +47,13 @@ public class CartService {
 
     public List<CartItemResponse> addOrUpdateItem(String username, int productId, int quantity) {
         Product product = productRepo.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Invalid Product ID"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+
+        if (quantity > product.getQuantity()) {
+            throw new BusinessException(
+                "Only " + product.getQuantity() + " unit(s) of " + product.getName() + " available."
+            );
+        }
 
         Cart cart = getCartByUsername(username);
         Optional<CartItem> existingItem = cart.getItems().stream()

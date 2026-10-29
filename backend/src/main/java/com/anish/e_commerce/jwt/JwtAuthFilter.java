@@ -24,12 +24,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         HttpServletResponse response,
         FilterChain filterChain
     ) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        String token = null;
-        String username = null;
+        // Browser clients carry the token in an httpOnly cookie; the Authorization
+        // header is kept for non-browser callers (tests, curl, Postman).
+        String token = extractFromHeader(request);
+        if (token == null) {
+            token = extractFromCookie(request);
+        }
 
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.substring(7);
+        String username = null;
+        if (token != null) {
             try {
                 username = jwtUtil.extractUsername(token);
             } catch (Exception e) {
@@ -56,5 +59,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String extractFromHeader(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
+    }
+
+    private String extractFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+        for (Cookie cookie : cookies) {
+            if (JwtCookieProperties.ACCESS_COOKIE.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 }
