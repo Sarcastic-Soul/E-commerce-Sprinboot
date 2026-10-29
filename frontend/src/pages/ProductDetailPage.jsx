@@ -1,43 +1,59 @@
-import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import ProductDetail from '../components/ProductDetail';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import api from '../api/axios';
-import { useTheme } from '../context/ThemeContext';
+import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import ProductDetail from "../components/ProductDetail";
+import ProductReviews from "../components/reviews/ProductReviews";
+import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
+import api from "../api/axios";
 
-
-export default function ProductDetailPage({ addToCart }) {
+export default function ProductDetailPage() {
     const { id } = useParams();
-    const { darkMode} = useTheme();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchProduct = async () => {
+    const fetchProduct = useCallback(
+        async (silent = false) => {
             try {
-                setLoading(true);
+                if (!silent) setLoading(true);
                 const { data } = await api.get(`/product/${id}`);
                 setProduct(data);
+                setError(null);
             } catch (err) {
                 console.error(err);
-                setError('Failed to load product.');
+                if (!silent)
+                    setError(
+                        err.response?.status === 404
+                            ? "This product is not available."
+                            : "Failed to load product.",
+                    );
             } finally {
-                setLoading(false);
+                if (!silent) setLoading(false);
             }
-        };
+        },
+        [id],
+    );
+
+    useEffect(() => {
         fetchProduct();
-    }, [id]);
+    }, [fetchProduct]);
+
+    // After a review is written or removed, refresh the average + count quietly.
+    const refreshRating = useCallback(() => fetchProduct(true), [fetchProduct]);
 
     if (loading) return <LoadingState variant="page" />;
-    if (error) return <ErrorState error={error} darkMode={darkMode} />;
+    if (error) return <ErrorState error={error} onRetry={() => fetchProduct()} />;
 
     return (
-        <ProductDetail
-            product={product}
-            addToCart={addToCart}
-            darkMode={darkMode}
-        />
+        <div className="pb-12">
+            <ProductDetail product={product} />
+            <ProductReviews
+                key={product.id}
+                productId={product.id}
+                averageRating={product.averageRating}
+                reviewCount={product.reviewCount}
+                onChanged={refreshRating}
+            />
+        </div>
     );
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Check } from "lucide-react";
+import { BellIcon as Bell, CheckIcon as Check } from "@phosphor-icons/react";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
+import { navIcon } from "../utils/ui";
 
 export default function NotificationBell() {
     const [notifications, setNotifications] = useState([]);
@@ -52,11 +53,12 @@ export default function NotificationBell() {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`relative p-2 rounded-full border-2 border-black transition-all transform active:translate-x-[2px] active:translate-y-[2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none
-                ${darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-white hover:bg-gray-50 text-black"}`}
+                className={navIcon}
                 title="Notifications"
+                aria-label={`Notifications, ${unreadCount} unread`}
+                aria-expanded={isOpen}
             >
-                <Bell size={24} />
+                <Bell size={20} />
                 {unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-black">
                         {unreadCount}
@@ -119,6 +121,7 @@ export default function NotificationBell() {
                                             }
                                             className="p-1 rounded-full bg-green-500 text-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none flex-shrink-0"
                                             title="Mark as read"
+                                            aria-label="Mark as read"
                                         >
                                             <Check size={16} />
                                         </button>

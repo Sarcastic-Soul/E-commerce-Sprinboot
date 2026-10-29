@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, ArrowLeft } from "lucide-react";
+import { HeartIcon as Heart, ArrowLeftIcon as ArrowLeft } from "@phosphor-icons/react";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
 import ProductCard from "../components/ProductCard";
@@ -49,17 +49,14 @@ export default function WishlistPage() {
             <div className="flex items-center gap-4 mb-8">
                 <button
                     onClick={() => navigate("/")}
+                    aria-label="Go back"
                     className={`p-2 rounded-full border-2 border-black transition-transform active:translate-x-[2px] active:translate-y-[2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none
                     ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}
                 >
                     <ArrowLeft size={24} />
                 </button>
                 <h1 className="text-4xl font-black flex items-center gap-3">
-                    <Heart
-                        className="text-red-500"
-                        fill="currentColor"
-                        size={36}
-                    />
+                    <Heart className="text-red-500" weight="fill" size={36} />
                     My Wishlist
                 </h1>
             </div>
@@ -78,7 +75,7 @@ export default function WishlistPage() {
                     <button
                         onClick={() => navigate("/")}
                         className={`px-6 py-3 font-bold border-4 border-black rounded-lg transition-transform active:translate-x-[2px] active:translate-y-[2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none
-                        ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-yellow-400 hover:bg-yellow-500"}`}
+                        bg-yellow-400 hover:bg-yellow-500 text-black`}
                     >
                         Start Shopping
                     </button>

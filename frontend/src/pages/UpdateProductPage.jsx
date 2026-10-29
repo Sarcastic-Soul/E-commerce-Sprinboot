@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import api from '../api/axios';
 import { PRODUCT_CATEGORIES } from '../constants/categories.js';
+import GalleryUploader from '../components/GalleryUploader';
+import LoadingState from '../components/LoadingState';
+import ErrorState from '../components/ErrorState';
+import { productImage } from '../utils/image.js';
 
 export default function UpdateProduct() {
     const { id } = useParams();
@@ -18,12 +22,15 @@ export default function UpdateProduct() {
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [images, setImages] = useState([]);
+    const [galleryBusy, setGalleryBusy] = useState(false);
 
     useEffect(() => {
         api.get(`/product/${id}`)
             .then((res) => {
                 setProduct(res.data);
-                if (res.data.imageUrl) setPreview(res.data.imageUrl);
+                setImages(Array.isArray(res.data.images) ? res.data.images : []);
+                if (res.data.imageUrl) setPreview(productImage(res.data.imageUrl, 800));
                 setLoading(false);
             })
             .catch(() => {
@@ -51,10 +58,14 @@ export default function UpdateProduct() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting) return;
+        if (galleryBusy) {
+            toast.error('Wait for the gallery images to finish uploading');
+            return;
+        }
         setIsSubmitting(true);
 
         try {
-            let updatedProduct = { ...product };
+            let updatedProduct = { ...product, images };
 
             if (image) {
                 const imgForm = new FormData();
@@ -87,8 +98,8 @@ export default function UpdateProduct() {
         setProduct((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
     };
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    if (loading) return <LoadingState variant="page" />;
+    if (error) return <ErrorState error={error} />;
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
@@ -165,7 +176,7 @@ export default function UpdateProduct() {
                         name="category"
                         value={product.category}
                         onChange={handleChange}
-                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                         required
                     >
                         <option value="">Select a category</option>
@@ -205,6 +216,13 @@ export default function UpdateProduct() {
                     </div>
                 )}
 
+                <GalleryUploader
+                    images={images}
+                    onChange={setImages}
+                    onBusyChange={setGalleryBusy}
+                    disabled={isSubmitting}
+                />
+
                 <div className="flex gap-4">
                     <button
                         type="button"
@@ -215,7 +233,7 @@ export default function UpdateProduct() {
                     </button>
                     <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || galleryBusy}
                         className={`w-full py-3 px-6 font-bold rounded-xl shadow-[4px_4px_0px_0px_black] transition
                         ${isSubmitting
                             ? "bg-gray-400 cursor-not-allowed"

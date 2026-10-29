@@ -1,4 +1,10 @@
-import { ShoppingCart, Heart, Loader2 } from "lucide-react";
+import {
+    ShoppingCartIcon as ShoppingCart,
+    HeartIcon as Heart,
+    CircleNotchIcon as Loader2,
+} from "@phosphor-icons/react";
+import StarRating from "./StarRating";
+import { focusRing } from "../utils/ui.js";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +13,7 @@ import { toast } from "sonner";
 import api from "../api/axios.js";
 import { useCart } from "../context/CartContext.jsx";
 import { productImage, PLACEHOLDER } from "../utils/image.js";
+import { categoryLabel } from "../constants/categories.js";
 
 export default function ProductCard({
     product,
@@ -27,6 +34,8 @@ export default function ProductCard({
     const [adding, setAdding] = useState(false);
 
     const imageUrl = productImage(product.imageUrl, 400);
+    const lowStock =
+        product.available && product.quantity > 0 && product.quantity <= 5;
 
     // Follow the parent's value when it changes (e.g. the wishlist finished
     // loading). Done during render, not in an effect, to avoid a second render.
@@ -101,8 +110,8 @@ export default function ProductCard({
     return (
         <div
             className={`group relative rounded-lg overflow-hidden transition-all duration-300 transform hover:-translate-y-1
-        ${darkMode ? "bg-gray-800 shadow-blue-500/20" : "bg-white shadow-black/30"}
-        shadow-lg border-4 ${darkMode ? "border-gray-700" : "border-black"}`}
+        ${darkMode ? "bg-gray-800" : "bg-white"}
+        shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] border-4 border-black`}
         >
             <div className="relative aspect-w-1 aspect-h-1 overflow-hidden">
                 <img
@@ -111,22 +120,27 @@ export default function ProductCard({
                     loading="lazy"
                     width={400}
                     height={256}
-                    className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-64 object-cover"
                     onError={(e) => {
                         e.target.src = PLACEHOLDER;
                     }}
                 />
 
                 {/* Floating Wishlist Button */}
+                {lowStock && (
+                    <span className="absolute top-3 left-3 px-2 py-1 text-xs font-black rounded border-2 border-black bg-yellow-300 text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        Only {product.quantity} left
+                    </span>
+                )}
+
                 <button
                     onClick={handleWishlistToggle}
-                    className={`absolute top-3 right-3 p-2 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none z-10 cursor-pointer
+                    aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+                    aria-pressed={isWishlisted}
+                    className={`absolute top-3 right-3 w-11 h-11 flex items-center justify-center ${focusRing} rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none z-10 cursor-pointer
                     ${isWishlisted ? "bg-red-500 text-white" : darkMode ? "bg-gray-800 text-white hover:bg-gray-700" : "bg-white text-black hover:bg-red-50"}`}
                 >
-                    <Heart
-                        size={20}
-                        fill={isWishlisted ? "currentColor" : "none"}
-                    />
+                    <Heart size={20} weight={isWishlisted ? "fill" : "bold"} />
                 </button>
             </div>
 
@@ -143,7 +157,14 @@ export default function ProductCard({
                 </div>
 
                 <div className="mb-4">
-                    <p className="text-sm opacity-70">{product.category}</p>
+                    <p className="text-sm opacity-70">{categoryLabel(product.category)}</p>
+                    {product.reviewCount > 0 && (
+                        <p className="flex items-center gap-1 mt-1 text-sm font-bold">
+                            <StarRating value={product.averageRating} size={14} />
+                            <span>{Number(product.averageRating).toFixed(1)}</span>
+                            <span className="opacity-70">({product.reviewCount})</span>
+                        </p>
+                    )}
                     <p className="text-xl font-bold mt-1">
                         ₹{product.price.toFixed(2)}
                     </p>
@@ -155,8 +176,8 @@ export default function ProductCard({
                             e.stopPropagation();
                             onClick();
                         }}
-                        className={`flex-1 py-2 px-4 rounded font-bold text-sm cursor-pointer
-              ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-yellow-400 hover:bg-yellow-500"}
+                        className={`flex-1 min-h-[44px] py-2 px-4 rounded font-bold text-sm cursor-pointer ${focusRing}
+              bg-yellow-400 hover:bg-yellow-500 text-black
               transition-colors duration-300 transform border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
               active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]`}
                     >
@@ -173,7 +194,8 @@ export default function ProductCard({
                             if (product.available) handleAddToCart(product);
                         }}
                         disabled={!product.available || adding}
-                        className={`py-2 px-4 rounded font-bold text-sm cursor-pointer
+                        aria-label={product.available ? `Add ${product.name} to cart` : `${product.name} is out of stock`}
+                        className={`min-h-[44px] min-w-[44px] flex items-center justify-center py-2 px-4 rounded font-bold text-sm cursor-pointer ${focusRing}
         ${
             product.available
                 ? darkMode

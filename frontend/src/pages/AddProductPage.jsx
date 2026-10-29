@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import api from "../api/axios";
+import { toast } from "sonner";
 import { PRODUCT_CATEGORIES } from "../constants/categories.js";
+import GalleryUploader from "../components/GalleryUploader";
 
 export default function AddProduct() {
     const [product, setProduct] = useState({
@@ -19,6 +21,8 @@ export default function AddProduct() {
     const [preview, setPreview] = useState(null);
     const [fileSize, setFileSize] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [images, setImages] = useState([]);
+    const [galleryBusy, setGalleryBusy] = useState(false);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -36,7 +40,7 @@ export default function AddProduct() {
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
         if (file.size > maxSize) {
-            alert(
+            toast.error(
                 `File size is ${sizeInMB} MB. Please upload a file smaller than 5 MB.`,
             );
             setImage(null);
@@ -53,6 +57,10 @@ export default function AddProduct() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (isSubmitting) return;
+        if (galleryBusy) {
+            toast.error("Wait for the gallery images to finish uploading");
+            return;
+        }
         setIsSubmitting(true);
 
         try {
@@ -69,7 +77,7 @@ export default function AddProduct() {
                 if (imageRes.status === 200) {
                     imageUrl = imageRes.data;
                 } else {
-                    alert("Image upload failed");
+                    toast.error("Image upload failed");
                     setIsSubmitting(false);
                     return;
                 }
@@ -79,11 +87,12 @@ export default function AddProduct() {
                 ...product,
                 createdAt: new Date().toISOString(),
                 imageUrl,
+                images,
             };
 
             const response = await api.post("/product", productWithImage);
             if (response.status === 201) {
-                alert("Product added!");
+                toast.success("Product added");
                 setProduct({
                     name: "",
                     description: "",
@@ -97,12 +106,13 @@ export default function AddProduct() {
                 setImage(null);
                 setPreview(null);
                 setFileSize(null);
+                setImages([]);
             } else {
-                alert("Failed to add product.");
+                toast.error("Failed to add product.");
             }
         } catch (err) {
             console.error(err);
-            alert("Something went wrong!");
+            toast.error(err.response?.data?.message || "Something went wrong");
         } finally {
             setIsSubmitting(false);
         }
@@ -127,7 +137,7 @@ export default function AddProduct() {
                         name="name"
                         value={product.name}
                         onChange={handleChange}
-                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                         required
                     />
                 </div>
@@ -140,7 +150,7 @@ export default function AddProduct() {
                         name="description"
                         value={product.description}
                         onChange={handleChange}
-                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                         required
                     />
                 </div>
@@ -154,7 +164,7 @@ export default function AddProduct() {
                         name="brand"
                         value={product.brand}
                         onChange={handleChange}
-                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                         required
                     />
                 </div>
@@ -168,7 +178,7 @@ export default function AddProduct() {
                         name="price"
                         value={product.price}
                         onChange={handleChange}
-                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                         required
                     />
                 </div>
@@ -181,7 +191,7 @@ export default function AddProduct() {
                         name="category"
                         value={product.category}
                         onChange={handleChange}
-                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                        className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                         required
                     >
                         <option value="">Select a category</option>
@@ -220,7 +230,7 @@ export default function AddProduct() {
                             value={product.quantity}
                             onChange={handleChange}
                             min="0"
-                            className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none"
+                            className="w-full p-3 border-2 border-black rounded-xl bg-[#e0e0e0] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
                             required
                         />
                     </div>
@@ -251,9 +261,16 @@ export default function AddProduct() {
                     )}
                 </div>
 
+                <GalleryUploader
+                    images={images}
+                    onChange={setImages}
+                    onBusyChange={setGalleryBusy}
+                    disabled={isSubmitting}
+                />
+
                 <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || galleryBusy}
                     className={`w-full py-3 px-6 font-bold rounded-xl shadow-[4px_4px_0px_0px_black] transition
                     ${
                         isSubmitting

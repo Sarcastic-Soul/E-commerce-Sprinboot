@@ -1,7 +1,11 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react"; // Added Pagination Icons
+import {
+    CaretLeftIcon as ChevronLeft,
+    CaretRightIcon as ChevronRight,
+    IconContext,
+} from "@phosphor-icons/react";
 import { Navbar } from "./components/Navbar";
 import ProductGrid from "./components/ProductGrid";
 import ProductDetailPage from "./pages/ProductDetailPage";
@@ -27,6 +31,24 @@ import WishlistPage from "./pages/WishlistPage.jsx";
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
 const AddProduct = lazy(() => import("./pages/AddProductPage"));
 const UpdateProduct = lazy(() => import("./pages/UpdateProductPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage.jsx"));
+const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage.jsx"));
+const AccountPage = lazy(() => import("./pages/AccountPage.jsx"));
+
+const SORT_OPTIONS = [
+    { value: "newest", label: "Newest" },
+    { value: "price_asc", label: "Price: low to high" },
+    { value: "price_desc", label: "Price: high to low" },
+    { value: "rating", label: "Top rated" },
+    { value: "name", label: "Name (A-Z)" },
+];
+
+// One weight across the app; "bold" matches the thick-border brutalist style.
+const ICON_DEFAULTS = { weight: "bold" };
+
+const lazyPage = (node) => (
+    <Suspense fallback={<LoadingState variant="page" />}>{node}</Suspense>
+);
 
 function InnerApp() {
     const [products, setProducts] = useState([]);
@@ -39,14 +61,17 @@ function InnerApp() {
     const [totalPages, setTotalPages] = useState(0);
     const [isFiltering, setIsFiltering] = useState(false);
     const [filterResetSignal, setFilterResetSignal] = useState(0);
+    const [sort, setSort] = useState("newest");
 
     const { darkMode } = useTheme();
 
-    const fetchProducts = useCallback(async (page) => {
+    const fetchProducts = useCallback(async (page, sortBy) => {
         try {
             setLoading(true);
             // Request the specific page
-            const response = await api.get(`/products?page=${page}&size=12`);
+            const response = await api.get("/products", {
+                params: { page, size: 12, sort: sortBy },
+            });
 
             // Spring serializes Page VIA_DTO (see ECommerceApplication): items in
             // `content`, totals nested under `page`.
@@ -64,9 +89,14 @@ function InnerApp() {
     // Only fetch paginated defaults if the user is NOT using the Navbar filters
     useEffect(() => {
         if (!isFiltering) {
-            fetchProducts(currentPage);
+            fetchProducts(currentPage, sort);
         }
-    }, [currentPage, isFiltering, fetchProducts]);
+    }, [currentPage, isFiltering, sort, fetchProducts]);
+
+    const handleSortChange = (e) => {
+        setSort(e.target.value);
+        setCurrentPage(0);
+    };
 
     // Handle data coming from the Navbar (Search & Filters)
     const clearFilters = useCallback(
@@ -104,6 +134,7 @@ function InnerApp() {
                 setShowCart={setShowCart}
                 onSearchResults={handleSearchResults}
                 resetSignal={filterResetSignal}
+                sort={sort}
             />
 
             <main className="container mx-auto px-4 py-8">
@@ -111,64 +142,93 @@ function InnerApp() {
                     <Route
                         path="/"
                         element={
-                            loading ? (
-                                <LoadingState />
-                            ) : error ? (
-                                <ErrorState error={error} />
-                            ) : (
-                                <div className="flex flex-col pb-8">
-                                    <ProductGrid
-                                        products={products}
-                                        onClearFilters={
-                                            isFiltering
-                                                ? clearFilters
-                                                : undefined
+                            <div className="flex flex-col pb-8">
+                                <div className="flex flex-wrap items-center justify-end gap-3 mb-6">
+                                    <label
+                                        htmlFor="home-sort"
+                                        className="font-black text-sm"
+                                    >
+                                        SORT BY
+                                    </label>
+                                    <select
+                                        id="home-sort"
+                                        value={sort}
+                                        onChange={handleSortChange}
+                                        className={`min-h-[44px] px-3 border-4 border-black rounded-lg font-bold cursor-pointer shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}
+                                    >
+                                        {SORT_OPTIONS.map((o) => (
+                                            <option key={o.value} value={o.value}>
+                                                {o.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {loading ? (
+                                    <LoadingState />
+                                ) : error ? (
+                                    <ErrorState
+                                        error={error}
+                                        onRetry={() =>
+                                            fetchProducts(currentPage, sort)
                                         }
                                     />
+                                ) : (
+                                    <>
+                                        <ProductGrid
+                                            products={products}
+                                            onClearFilters={
+                                                isFiltering
+                                                    ? clearFilters
+                                                    : undefined
+                                            }
+                                        />
 
-                                    {/* Neo-brutalist Pagination Controls */}
-                                    {totalPages > 1 && !isFiltering && (
-                                        <div className="flex justify-center items-center gap-4 mt-12 mb-4">
-                                            <button
-                                                onClick={() =>
-                                                    setCurrentPage((p) =>
-                                                        Math.max(0, p - 1),
-                                                    )
-                                                }
-                                                disabled={currentPage === 0}
-                                                className={`p-2 border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed
-                                                ${darkMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-yellow-400 hover:bg-yellow-500 text-black"}`}
-                                            >
-                                                <ChevronLeft size={24} />
-                                            </button>
+                                        {/* Neo-brutalist Pagination Controls */}
+                                        {totalPages > 1 && !isFiltering && (
+                                            <div className="flex justify-center items-center gap-4 mt-12 mb-4">
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage((p) =>
+                                                            Math.max(0, p - 1),
+                                                        )
+                                                    }
+                                                    disabled={currentPage === 0}
+                                                    aria-label="Previous page"
+                                                    className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed
+                                                    bg-yellow-400 hover:bg-yellow-500 text-black`}
+                                                >
+                                                    <ChevronLeft size={24} />
+                                                </button>
 
-                                            <span className="font-black text-xl border-4 border-black px-4 py-1 rounded-lg bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                                                Page {currentPage + 1} of{" "}
-                                                {totalPages}
-                                            </span>
+                                                <span className="font-black text-xl border-4 border-black px-4 py-1 rounded-lg bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                                    Page {currentPage + 1} of{" "}
+                                                    {totalPages}
+                                                </span>
 
-                                            <button
-                                                onClick={() =>
-                                                    setCurrentPage((p) =>
-                                                        Math.min(
-                                                            totalPages - 1,
-                                                            p + 1,
-                                                        ),
-                                                    )
-                                                }
-                                                disabled={
-                                                    currentPage ===
-                                                    totalPages - 1
-                                                }
-                                                className={`p-2 border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed
-                                                ${darkMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-yellow-400 hover:bg-yellow-500 text-black"}`}
-                                            >
-                                                <ChevronRight size={24} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage((p) =>
+                                                            Math.min(
+                                                                totalPages - 1,
+                                                                p + 1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        currentPage ===
+                                                        totalPages - 1
+                                                    }
+                                                    aria-label="Next page"
+                                                    className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center border-4 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed
+                                                    bg-yellow-400 hover:bg-yellow-500 text-black`}
+                                                >
+                                                    <ChevronRight size={24} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         }
                     />
                     <Route
@@ -200,6 +260,30 @@ function InnerApp() {
                         element={
                             <ProtectedRoute>
                                 <OrderHistoryPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/orders/:id"
+                        element={
+                            <ProtectedRoute>
+                                {lazyPage(<OrderDetailPage />)}
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/checkout"
+                        element={
+                            <ProtectedRoute>
+                                {lazyPage(<CheckoutPage />)}
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/account"
+                        element={
+                            <ProtectedRoute>
+                                {lazyPage(<AccountPage />)}
                             </ProtectedRoute>
                         }
                     />
@@ -245,12 +329,14 @@ export default function App() {
         <AuthProvider>
             <ThemeProvider>
                 <CartProvider>
-                    <Router>
-                        <ToastProvider />
-                        <ErrorBoundary>
-                            <InnerApp />
-                        </ErrorBoundary>
-                    </Router>
+                    <IconContext.Provider value={ICON_DEFAULTS}>
+                        <Router>
+                            <ToastProvider />
+                            <ErrorBoundary>
+                                <InnerApp />
+                            </ErrorBoundary>
+                        </Router>
+                    </IconContext.Provider>
                 </CartProvider>
             </ThemeProvider>
         </AuthProvider>

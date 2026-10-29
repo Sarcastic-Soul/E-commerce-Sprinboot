@@ -1,12 +1,21 @@
 import { useNavigate } from "react-router-dom";
-import { Edit, ShoppingCart, Trash, Heart, Loader2 } from "lucide-react";
+import {
+    PencilSimpleIcon as Edit,
+    ShoppingCartIcon as ShoppingCart,
+    ArchiveIcon,
+    HeartIcon as Heart,
+    CircleNotchIcon as Loader2,
+} from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "sonner";
 import { useCart } from "../context/CartContext.jsx";
-import { productImage, PLACEHOLDER } from "../utils/image.js";
+import ProductGallery from "./ProductGallery";
+import StarRating from "./StarRating";
+import { focusRing } from "../utils/ui.js";
+import { categoryLabel } from "../constants/categories.js";
 
 export default function ProductDetail({ product }) {
     const { darkMode } = useTheme();
@@ -19,7 +28,6 @@ export default function ProductDetail({ product }) {
     // Without a pending flag a double-click fires two POSTs and two toasts.
     const [adding, setAdding] = useState(false);
 
-    const imageUrl = productImage(product.imageUrl, 800);
     const createdAtDate = new Date(product.createdAt);
     const formattedCreatedAtDate = `${String(createdAtDate.getDate()).padStart(2, "0")}-${String(createdAtDate.getMonth() + 1).padStart(2, "0")}-${createdAtDate.getFullYear()}`;
     const { setCartItemCount } = useCart();
@@ -61,17 +69,21 @@ export default function ProductDetail({ product }) {
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to delete this product?"))
+    const handleArchive = async () => {
+        if (
+            !window.confirm(
+                "Archive this product?\n\nThis hides the product from the store; past orders keep it.",
+            )
+        )
             return;
 
         try {
             await api.delete(`/product/${product.id}`);
-            toast.success("Product deleted successfully!");
+            toast.success("Product archived. It is now hidden from the store.");
             navigate("/");
         } catch (error) {
-            console.error("Delete error:", error);
-            alert("Something went wrong!");
+            console.error("Archive error:", error);
+            toast.error("Could not archive the product");
         }
     };
 
@@ -115,22 +127,15 @@ export default function ProductDetail({ product }) {
     return (
         <div>
             <div
-                className={`grid md:grid-cols-2 gap-8 rounded-lg overflow-hidden border-4 p-6 shadow-lg
-                ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-black"}`}
+                className={`grid md:grid-cols-2 gap-8 rounded-lg overflow-hidden border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
+                ${darkMode ? "bg-gray-800" : "bg-white"}`}
             >
-                <div className="overflow-hidden rounded-lg border-4 border-black">
-                    <img
-                        src={imageUrl}
-                        alt={product.name}
-                        loading="lazy"
-                        width={800}
-                        height={800}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                            e.target.src = PLACEHOLDER;
-                        }}
-                    />
-                </div>
+                <ProductGallery
+                    key={product.id}
+                    name={product.name}
+                    imageUrl={product.imageUrl}
+                    images={product.images}
+                />
 
                 <div>
                     <div className="mb-6">
@@ -141,25 +146,45 @@ export default function ProductDetail({ product }) {
                             </h2>
                             <button
                                 onClick={handleWishlistToggle}
-                                className={`p-3 rounded-full border-4 border-black transition-all cursor-pointer
+                                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                aria-pressed={isWishlisted}
+                                className={`p-3 shrink-0 ${focusRing} rounded-full border-4 border-black transition-all cursor-pointer
                                 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none
                                 ${isWishlisted ? "bg-red-500 text-white" : darkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-white text-black hover:bg-gray-100"}
                                 `}
                             >
                                 <Heart
-                                    fill={
-                                        isWishlisted ? "currentColor" : "none"
-                                    }
+                                    weight={isWishlisted ? "fill" : "bold"}
                                     size={28}
                                 />
                             </button>
                         </div>
 
+                        <a
+                            href="#reviews"
+                            className={`inline-flex items-center gap-2 mb-3 min-h-[44px] font-bold hover:underline rounded ${focusRing}`}
+                        >
+                            {product.reviewCount > 0 ? (
+                                <>
+                                    <StarRating value={product.averageRating} size={20} />
+                                    <span className="font-black">
+                                        {Number(product.averageRating).toFixed(1)}
+                                    </span>
+                                    <span className="opacity-70">
+                                        ({product.reviewCount}{" "}
+                                        {product.reviewCount === 1 ? "review" : "reviews"})
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="opacity-70">No reviews yet</span>
+                            )}
+                        </a>
+
                         <div
-                            className={`inline-block px-3 py-1 rounded-lg text-sm font-bold mb-4
+                            className={`block w-fit px-3 py-1 rounded-lg text-sm font-bold mb-4
                             ${darkMode ? "bg-gray-700" : "bg-yellow-300"}`}
                         >
-                            {product.category}
+                            {categoryLabel(product.category)}
                         </div>
                         <p className="text-3xl font-black mb-4">
                             ₹{product.price.toFixed(2)}
@@ -193,7 +218,16 @@ export default function ProductDetail({ product }) {
                             <p className="text-sm opacity-70">
                                 Available Quantity
                             </p>
-                            <p className="font-bold">{product.quantity}</p>
+                            <p className="font-bold">
+                                {product.quantity}
+                                {product.available &&
+                                    product.quantity > 0 &&
+                                    product.quantity <= 5 && (
+                                        <span className="ml-2 inline-block px-2 py-0.5 text-xs font-black border-2 border-black rounded bg-yellow-300 text-black">
+                                            Only {product.quantity} left
+                                        </span>
+                                    )}
+                            </p>
                         </div>
                         <div
                             className={`p-4 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
@@ -244,13 +278,13 @@ export default function ProductDetail({ product }) {
             </div>
 
             {isAdmin && (
-                <div className="flex gap-4 mt-6">
+                <div className="flex flex-wrap gap-4 mt-6">
                     <button
                         onClick={() =>
                             navigate(`/update-product/${product.id}`)
                         }
                         className={`py-3 px-6 rounded-lg font-bold flex items-center gap-2 border-4 border-black transition-colors
-                ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600 text-white"}
+                ${darkMode ? "bg-gray-700 hover:bg-gray-600 text-white" : "bg-white hover:bg-gray-100 text-black"}
                 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
                     >
                         <Edit size={20} />
@@ -258,13 +292,13 @@ export default function ProductDetail({ product }) {
                     </button>
 
                     <button
-                        onClick={handleDelete}
+                        onClick={handleArchive}
                         className={`py-3 px-6 rounded-lg font-bold flex items-center gap-2 border-4 border-black transition-colors
                 ${darkMode ? "bg-gray-600 hover:bg-gray-700" : "bg-gray-500 hover:bg-gray-600 text-white"}
                 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
                     >
-                        <Trash size={20} />
-                        Delete Product
+                        <ArchiveIcon size={20} />
+                        Archive product
                     </button>
                 </div>
             )}

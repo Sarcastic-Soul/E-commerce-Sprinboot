@@ -7,7 +7,8 @@ import { useTheme } from "../context/ThemeContext";
  * see what is loading.
  *
  * `variant="grid"` mirrors the ProductCard grid; `variant="page"` is a generic block
- * for detail and dashboard views that are not card grids.
+ * for detail and dashboard views that are not card grids; `variant="list"` is a
+ * short stack of rows for sections inside a page.
  */
 export default function LoadingState({ variant = "grid", count = 8 }) {
     const { darkMode } = useTheme();
@@ -18,6 +19,24 @@ export default function LoadingState({ variant = "grid", count = 8 }) {
     const bar = darkMode ? "bg-gray-700" : "bg-gray-200";
     const block = darkMode ? "bg-gray-700" : "bg-gray-300";
 
+    if (variant === "list") {
+        return (
+            <div
+                className="animate-pulse space-y-3"
+                role="status"
+                aria-label="Loading"
+            >
+                {Array.from({ length: Math.min(count, 5) }).map((_, i) => (
+                    <div
+                        key={i}
+                        className={`h-16 rounded-lg border-4 ${surface}`}
+                    />
+                ))}
+                <span className="sr-only">Loading...</span>
+            </div>
+        );
+    }
+
     if (variant === "page") {
         return (
             <div
@@ -27,7 +46,7 @@ export default function LoadingState({ variant = "grid", count = 8 }) {
             >
                 <div className={`h-10 w-1/3 rounded ${bar}`} />
                 <div
-                    className={`rounded-lg border-4 p-6 shadow-lg ${surface}`}
+                    className={`rounded-lg border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${surface}`}
                 >
                     <div className={`h-64 w-full rounded ${block} mb-6`} />
                     <div className={`h-6 w-2/3 rounded ${bar} mb-3`} />
@@ -48,7 +67,7 @@ export default function LoadingState({ variant = "grid", count = 8 }) {
             {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={i}
-                    className={`rounded-lg overflow-hidden border-4 shadow-lg animate-pulse ${surface}`}
+                    className={`rounded-lg overflow-hidden border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-pulse ${surface}`}
                 >
                     <div className={`w-full h-64 ${block}`} />
                     <div className="p-4">

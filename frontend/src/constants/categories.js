@@ -15,3 +15,8 @@ export const PRODUCT_CATEGORIES = [
     { value: "AUTOMOTIVE", label: "Automotive" },
     { value: "GROCERIES_GOURMET_FOOD", label: "Groceries & Gourmet Food" },
 ];
+
+const LABELS = Object.fromEntries(PRODUCT_CATEGORIES.map((c) => [c.value, c.label]));
+
+/** "TOYS_GAMES" -> "Toys & Games"; unknown values are shown as they are. */
+export const categoryLabel = (value) => LABELS[value] ?? value;

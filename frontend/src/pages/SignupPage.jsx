@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { EyeIcon as Eye, EyeSlashIcon as EyeOff } from '@phosphor-icons/react';
 import {toast} from "sonner";
 
 export default function SignupPage() {
@@ -45,7 +45,7 @@ export default function SignupPage() {
             <form
                 onSubmit={handleSubmit}
                 className={`p-8 border-4 rounded-2xl shadow-[6px_6px_0px_0px_black] w-full max-w-md space-y-6
-                ${darkMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-black text-black'}`}
+                ${darkMode ? 'bg-gray-800 border-black text-white' : 'bg-white border-black text-black'}`}
             >
                 <h1 className="text-3xl font-extrabold text-center">Sign Up</h1>
 
@@ -58,7 +58,7 @@ export default function SignupPage() {
                 <input
                     type="text"
                     placeholder="Username"
-                    className={`w-full p-3 border-2 rounded-xl ${darkMode ? 'bg-gray-700 border-gray-500 text-white' : 'bg-[#e0e0e0] border-black text-black'}`}
+                    className={`w-full p-3 border-2 rounded-xl ${darkMode ? 'bg-gray-900 border-black text-white placeholder-gray-400' : 'bg-[#e0e0e0] border-black text-black'}`}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -68,7 +68,7 @@ export default function SignupPage() {
                     <input
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Password"
-                        className={`w-full p-3 border-2 rounded-xl pr-12 ${darkMode ? 'bg-gray-700 border-gray-500 text-white' : 'bg-[#e0e0e0] border-black text-black'}`}
+                        className={`w-full p-3 border-2 rounded-xl pr-12 ${darkMode ? 'bg-gray-900 border-black text-white placeholder-gray-400' : 'bg-[#e0e0e0] border-black text-black'}`}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -87,7 +87,7 @@ export default function SignupPage() {
                     <input
                         type={showConfirm ? 'text' : 'password'}
                         placeholder="Confirm Password"
-                        className={`w-full p-3 border-2 rounded-xl pr-12 ${darkMode ? 'bg-gray-700 border-gray-500 text-white' : 'bg-[#e0e0e0] border-black text-black'}`}
+                        className={`w-full p-3 border-2 rounded-xl pr-12 ${darkMode ? 'bg-gray-900 border-black text-white placeholder-gray-400' : 'bg-[#e0e0e0] border-black text-black'}`}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
@@ -105,14 +105,14 @@ export default function SignupPage() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3 px-6 font-bold rounded-xl shadow-[4px_4px_0px_0px_black] bg-black text-white hover:bg-gray-800 transition"
+                    className={`w-full py-3 px-6 font-bold rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_black] transition ${darkMode ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-black text-white hover:bg-gray-800"}`}
                 >
                     {loading ? 'Signing up...' : 'Sign Up'}
                 </button>
 
                 <p className="text-center text-sm opacity-80">
                     Already have an account?{' '}
-                    <Link to="/login" className="text-blue-500 font-bold hover:underline">
+                    <Link to="/login" className="font-black underline decoration-4 decoration-yellow-400 underline-offset-4 hover:bg-yellow-400 hover:text-black">
                         Login
                     </Link>
                 </p>

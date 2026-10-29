@@ -1,4 +1,9 @@
-import { X, Plus, Minus } from "lucide-react";
+import {
+    XIcon as X,
+    PlusIcon as Plus,
+    MinusIcon as Minus,
+} from "@phosphor-icons/react";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +11,7 @@ import api from "../api/axios";
 import { toast } from "sonner";
 import { useCart } from "../context/CartContext.jsx";
 import { productImage, PLACEHOLDER } from "../utils/image.js";
+import { focusRing } from "../utils/ui.js";
 
 export default function Cart({ closeCart }) {
     const { darkMode } = useTheme();
@@ -13,6 +19,7 @@ export default function Cart({ closeCart }) {
     const cartRef = useRef(null);
     const closeButtonRef = useRef(null);
     const { setCartItemCount } = useCart();
+    const navigate = useNavigate();
 
     const [cartItems, setCartItems] = useState([]);
     const cartTotal = cartItems.reduce(
@@ -68,98 +75,10 @@ export default function Cart({ closeCart }) {
         }
     };
 
-    const loadRazorpayScript = () => {
-        return new Promise((resolve) => {
-            const script = document.createElement("script");
-            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.onload = () => resolve(true);
-            script.onerror = () => resolve(false);
-            document.body.appendChild(script);
-        });
-    };
-
-    const handleCheckout = async () => {
-        const isLoaded = await loadRazorpayScript();
-        if (!isLoaded) {
-            toast.error("Razorpay SDK failed to load. Are you online?");
-            return;
-        }
-
-        try {
-            const response = await api.post("/orders/place");
-            const orderData = response.data;
-
-            const options = {
-                key:
-                    import.meta.env.VITE_RAZORPAY_KEY_ID ||
-                    "rzp_test_your_dummy_key_id",
-                amount: Math.round(orderData.totalAmount * 100),
-                currency: "INR",
-                name: "BrutShop",
-                description: "Test Transaction",
-                order_id: orderData.razorpayOrderId,
-                handler: async function (response) {
-                    try {
-                        const verifyRes = await api.post("/payments/verify", {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-
-                        if (verifyRes.data.status === "success") {
-                            toast.success(
-                                "Payment successful! Order placed. 🚀",
-                            );
-                            setCartItems([]);
-                                            setCartItemCount(0);
-                            closeCart();
-                        }
-                    } catch {
-                        toast.error("Payment verification failed");
-                    }
-                },
-                prefill: {
-                    name: user?.username || "Guest",
-                    email: `${user?.username || "guest"}@example.com`,
-                    contact: "9999999999",
-                },
-                theme: {
-                    color: darkMode ? "#1f2937" : "#000000",
-                },
-                modal: {
-                    ondismiss: async function () {
-                        try {
-                            await api.post("/payments/fail", {
-                                razorpay_order_id: orderData.razorpayOrderId,
-                            });
-                        } catch (err) {
-                            console.error(
-                                "Failed to update order status on dismiss",
-                                err,
-                            );
-                        }
-                        toast.error("Payment cancelled");
-                    },
-                },
-            };
-
-            const paymentObject = new window.Razorpay(options);
-            paymentObject.on("payment.failed", async function (response) {
-                try {
-                    await api.post("/payments/fail", {
-                        razorpay_order_id: orderData.razorpayOrderId,
-                    });
-                } catch (err) {
-                    console.error("Failed to update order status", err);
-                }
-                toast.error(response.error.description || "Payment failed");
-            });
-            paymentObject.open();
-        } catch (err) {
-            toast.error(
-                err.response?.data?.message || "Failed to initialize checkout",
-            );
-        }
+    // Address, coupon and payment now happen on the /checkout page.
+    const handleCheckout = () => {
+        closeCart();
+        navigate("/checkout");
     };
 
     useEffect(() => {
@@ -233,7 +152,7 @@ export default function Cart({ closeCart }) {
                         ref={closeButtonRef}
                         onClick={closeCart}
                         aria-label="Close cart"
-                        className={`p-2 rounded-full ${darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-black hover:bg-gray-800 text-white"}`}
+                        className={`w-11 h-11 flex items-center justify-center ${focusRing} rounded-full ${darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-black hover:bg-gray-800 text-white"}`}
                     >
                         <X size={24} />
                     </button>
@@ -248,7 +167,7 @@ export default function Cart({ closeCart }) {
                             onClick={closeCart}
                             className={`px-4 py-2 rounded font-bold border-2
                             ${darkMode ? "border-white" : "border-black"}
-                            ${darkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-black hover:bg-gray-800 text-white"}
+                            ${darkMode ? "bg-yellow-400 hover:bg-yellow-300 text-black" : "bg-black hover:bg-gray-800 text-white"}
                             shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px]`}
                         >
                             Continue Shopping
@@ -282,6 +201,8 @@ export default function Cart({ closeCart }) {
                                                 onClick={() =>
                                                     removeFromCart(item.id)
                                                 }
+                                                aria-label={`Remove ${item.name} from cart`}
+                                                className={`w-11 h-11 -mt-2 -mr-2 flex items-center justify-center rounded shrink-0 ${focusRing}`}
                                             >
                                                 <X
                                                     size={16}
@@ -298,7 +219,8 @@ export default function Cart({ closeCart }) {
                                                     updateQuantity(item.id, -1)
                                                 }
                                                 disabled={item.quantity <= 1}
-                                                className={`p-1 rounded ${darkMode ? "bg-gray-600" : "bg-gray-200"} hover:bg-gray-400`}
+                                                aria-label={`Decrease quantity of ${item.name}`}
+                                                className={`w-11 h-11 flex items-center justify-center rounded border-2 border-black disabled:opacity-50 ${focusRing} ${darkMode ? "bg-gray-600" : "bg-gray-200"} hover:bg-gray-400`}
                                             >
                                                 <Minus size={14} />
                                             </button>
@@ -309,7 +231,8 @@ export default function Cart({ closeCart }) {
                                                 onClick={() =>
                                                     updateQuantity(item.id, 1)
                                                 }
-                                                className={`p-1 rounded ${darkMode ? "bg-gray-600" : "bg-gray-200"} hover:bg-gray-400`}
+                                                aria-label={`Increase quantity of ${item.name}`}
+                                                className={`w-11 h-11 flex items-center justify-center rounded border-2 border-black ${focusRing} ${darkMode ? "bg-gray-600" : "bg-gray-200"} hover:bg-gray-400`}
                                             >
                                                 <Plus size={14} />
                                             </button>

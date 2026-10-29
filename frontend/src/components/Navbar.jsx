@@ -1,16 +1,17 @@
 import {
-    ShoppingCart,
-    Moon,
-    Sun,
-    Plus,
-    LogOut,
-    Filter,
-    Search,
-    X,
-    History,
-    LayoutDashboard,
-    Heart,
-} from "lucide-react";
+    ShoppingCartIcon as ShoppingCart,
+    MoonIcon as Moon,
+    SunIcon as Sun,
+    PlusIcon as Plus,
+    SignOutIcon as LogOut,
+    FunnelIcon as Filter,
+    MagnifyingGlassIcon as Search,
+    XIcon as X,
+    ClockCounterClockwiseIcon as History,
+    SquaresFourIcon as LayoutDashboard,
+    HeartIcon as Heart,
+    UserCircleIcon,
+} from "@phosphor-icons/react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react"; // Added useRef
 import { useAuth } from "../context/AuthContext";
@@ -18,9 +19,15 @@ import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
 import { useCart } from "../context/CartContext.jsx";
 import NotificationBell from "./NotificationBell";
+import { navIcon, focusRing } from "../utils/ui";
 import { PRODUCT_CATEGORIES } from "../constants/categories.js";
 
-export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
+export function Navbar({
+    setShowCart,
+    onSearchResults,
+    resetSignal = 0,
+    sort = "newest",
+}) {
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedTerm, setDebouncedTerm] = useState("");
 
@@ -29,7 +36,6 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
     const [category, setCategory] = useState("");
     const [minPrice, setMinPrice] = useState("");
     const [maxPrice, setMaxPrice] = useState("");
-    const [sort, setSort] = useState("asc");
     const [available, setAvailable] = useState("");
 
     const { user, logout } = useAuth();
@@ -53,8 +59,7 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                 category ||
                 minPrice ||
                 maxPrice ||
-                available !== "" ||
-                sort !== "asc";
+                available !== "";
 
             // If it's the very first page load and no filters are active, do nothing!
             // Let App.jsx handle the default paginated fetch.
@@ -104,7 +109,6 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
         setCategory("");
         setMinPrice("");
         setMaxPrice("");
-        setSort("asc");
         setAvailable("");
     }, []);
 
@@ -125,7 +129,7 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
         <div className="flex flex-col">
             {/* Main Navbar */}
             <nav
-                className={`${darkMode ? "bg-gray-800 text-white" : "bg-black text-white"} py-4 px-6 shadow-lg z-20 relative`}
+                className="bg-black text-white py-4 px-6 border-b-4 border-yellow-400 z-20 relative"
             >
                 <div className="container mx-auto flex flex-wrap gap-4 justify-between items-center">
                     <h1 className="text-3xl font-black tracking-tighter">
@@ -134,41 +138,47 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
 
                     <div className="flex items-center gap-2">
                         <div className="relative">
+                            <label htmlFor="nav-search" className="sr-only">
+                                Search products
+                            </label>
                             <Search
                                 className={`absolute left-3 top-1/2 -translate-y-1/2 ${darkMode ? "text-white" : "text-black"}`}
                                 size={18}
                             />
                             <input
-                                type="text"
+                                id="nav-search"
+                                type="search"
                                 placeholder="Search products..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className={`pl-10 pr-4 py-2 rounded-lg font-bold border-4 border-black focus:outline-none w-64
+                                className={`pl-10 pr-4 py-2 rounded-lg font-bold border-4 border-black focus:outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500 w-52 sm:w-64 min-h-[44px]
                                 ${darkMode ? "bg-gray-900 text-white placeholder-gray-400" : "bg-white text-black placeholder-gray-500"}`}
                             />
                         </div>
 
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`p-2 rounded-lg border-4 border-black font-bold flex items-center gap-2 transition-transform active:translate-y-1 ${darkMode ? "bg-gray-700" : "bg-yellow-400 text-black"}`}
+                            className={`${navIcon} ${showFilters ? "!bg-yellow-400" : ""}`}
                             title="Toggle Filters"
+                            aria-label="Filters"
+                            aria-expanded={showFilters}
                         >
                             <Filter size={20} />
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                         {user?.role === "ADMIN" && (
                             <>
                                 <Link
                                     to="/admin/dashboard"
-                                    className="flex items-center gap-2 p-2 rounded-lg bg-cyan-400 text-black font-semibold hover:bg-cyan-300 transition-all duration-300 border-2 border-black"
+                                    className={`flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-white text-black font-bold hover:bg-yellow-300 border-2 border-black shadow-[3px_3px_0px_0px_#facc15] ${focusRing}`}
                                 >
                                     <LayoutDashboard size={20} /> Dashboard
                                 </Link>
                                 <Link
                                     to="/add-product"
-                                    className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-300 transition-all duration-300 border-2 border-black"
+                                    className={`flex items-center gap-2 min-h-[44px] px-3 py-2 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 border-2 border-black ${focusRing}`}
                                 >
                                     <Plus size={20} /> Add Product
                                 </Link>
@@ -177,7 +187,8 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
 
                         <button
                             onClick={toggleDarkMode}
-                            className={`p-2 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-900"} hover:bg-opacity-80 transition-all duration-300`}
+                            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                            className={navIcon}
                         >
                             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
@@ -187,16 +198,18 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                                 <NotificationBell />
                                 <Link
                                     to="/wishlist"
-                                    className="p-2 rounded-lg border-2 border-red-500 bg-red-500 hover:bg-red-600 transition-all duration-300"
+                                    className={navIcon}
                                     title="My Wishlist"
+                                    aria-label="My wishlist"
                                 >
                                     <Heart size={20} />
                                 </Link>
 
                                 <Link
                                     to="/orders"
-                                    className="p-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all duration-300"
+                                    className={navIcon}
                                     title="Order History"
+                                    aria-label="Order history"
                                 >
                                     <History size={20} />
                                 </Link>
@@ -204,13 +217,16 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                         )}
 
                         <button
-                            onClick={() => setShowCart(true)}
-                            className="relative p-2 rounded-lg bg-rose-600 hover:bg-rose-700 transition-all duration-300"
+                            onClick={() =>
+                                user ? setShowCart(true) : navigate("/login")
+                            }
+                            aria-label={`Shopping cart, ${cartItemCount} items`}
+                            className={`${navIcon} !bg-yellow-400 hover:!bg-yellow-300`}
                             title="Shopping Cart"
                         >
                             <ShoppingCart size={20} />
                             {cartItemCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full border-2 border-black">
+                                <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs font-black min-w-6 h-6 px-1 flex items-center justify-center rounded-full border-2 border-black">
                                     {cartItemCount}
                                 </span>
                             )}
@@ -219,19 +235,28 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                         {!user ? (
                             <Link
                                 to="/login"
-                                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg border-2 border-blue-700 hover:bg-blue-700 transition"
+                                className={`inline-flex items-center min-h-[44px] px-4 py-2 bg-yellow-400 text-black font-black rounded-lg border-2 border-black hover:bg-yellow-300 ${focusRing}`}
                             >
                                 Login
                             </Link>
                         ) : (
-                            <div className="flex items-center gap-3">
-                                <span className="font-bold text-yellow-400 hidden md:block">
-                                    Hi, {user.username}
-                                </span>
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    to="/account"
+                                    title="My account"
+                                    aria-label="My account"
+                                    className={`flex items-center gap-2 min-h-[44px] p-2 rounded-lg font-bold text-yellow-400 hover:bg-gray-800 transition-colors ${focusRing}`}
+                                >
+                                    <UserCircleIcon size={22} />
+                                    <span className="hidden md:inline">
+                                        Hi, {user.username}
+                                    </span>
+                                </Link>
                                 <button
                                     onClick={handleLogout}
                                     title="Logout"
-                                    className="flex items-center gap-1 px-3 py-2 rounded-lg font-semibold border-2 border-red-600 bg-red-500 hover:bg-red-600 transition"
+                                    aria-label="Log out"
+                                    className={`flex items-center gap-1 min-h-[44px] px-3 py-2 rounded-lg font-bold border-2 border-white text-white hover:bg-white hover:text-black transition-colors ${focusRing}`}
                                 >
                                     <LogOut size={18} />{" "}
                                     <span className="hidden md:inline">
@@ -252,13 +277,14 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                     <div className="flex flex-wrap justify-center items-end gap-6 w-full max-w-6xl">
                         {/* Category */}
                         <div className="flex flex-col w-full sm:w-48">
-                            <label className="block font-black text-sm mb-2 text-center">
+                            <label htmlFor="filter-category" className="block font-black text-sm mb-2 text-center">
                                 CATEGORY
                             </label>
                             <select
+                                id="filter-category"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className={`h-12 px-3 border-4 border-black font-bold outline-none cursor-pointer ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
+                                className={`h-12 px-3 border-4 border-black font-bold outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500 cursor-pointer ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
                             >
                                 <option value="">ALL</option>
                                 {PRODUCT_CATEGORIES.map((c) => (
@@ -279,6 +305,7 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                                     type="number"
                                     min="0"
                                     placeholder="Min ₹"
+                                    aria-label="Minimum price"
                                     value={minPrice}
                                     onChange={(e) =>
                                         setMinPrice(e.target.value)
@@ -286,12 +313,13 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                                     onKeyDown={(e) => {
                                         if (e.key === "-") e.preventDefault();
                                     }}
-                                    className={`h-12 w-1/2 px-3 border-4 border-black font-bold outline-none ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
+                                    className={`h-12 w-1/2 px-3 border-4 border-black font-bold outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500 ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
                                 />
                                 <input
                                     type="number"
                                     min="0"
                                     placeholder="Max ₹"
+                                    aria-label="Maximum price"
                                     value={maxPrice}
                                     onChange={(e) =>
                                         setMaxPrice(e.target.value)
@@ -299,20 +327,21 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                                     onKeyDown={(e) => {
                                         if (e.key === "-") e.preventDefault();
                                     }}
-                                    className={`h-12 w-1/2 px-3 border-4 border-black font-bold outline-none ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
+                                    className={`h-12 w-1/2 px-3 border-4 border-black font-bold outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500 ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
                                 />
                             </div>
                         </div>
 
                         {/* Availability */}
                         <div className="flex flex-col w-full sm:w-40">
-                            <label className="block font-black text-sm mb-2 text-center">
+                            <label htmlFor="filter-available" className="block font-black text-sm mb-2 text-center">
                                 AVAILABILITY
                             </label>
                             <select
+                                id="filter-available"
                                 value={available}
                                 onChange={(e) => setAvailable(e.target.value)}
-                                className={`h-12 px-3 border-4 border-black font-bold outline-none cursor-pointer ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
+                                className={`h-12 px-3 border-4 border-black font-bold outline-none focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-500 cursor-pointer ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
                             >
                                 <option value="">ALL</option>
                                 <option value="true">IN STOCK</option>
@@ -320,28 +349,14 @@ export function Navbar({ setShowCart, onSearchResults, resetSignal = 0 }) {
                             </select>
                         </div>
 
-                        {/* Sort */}
-                        <div className="flex flex-col w-full sm:w-48">
-                            <label className="block font-black text-sm mb-2 text-center">
-                                SORT BY
-                            </label>
-                            <select
-                                value={sort}
-                                onChange={(e) => setSort(e.target.value)}
-                                className={`h-12 px-3 border-4 border-black font-bold outline-none cursor-pointer ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}
-                            >
-                                <option value="asc">PRICE: LOW TO HIGH</option>
-                                <option value="desc">PRICE: HIGH TO LOW</option>
-                            </select>
-                        </div>
-
                         {/* Reset Button */}
                         <button
                             onClick={handleResetFilters}
                             title="Reset Filters"
+                            aria-label="Reset filters"
                             className="h-12 w-12 flex items-center justify-center bg-red-500 text-white rounded-lg hover:bg-red-600 transition-transform active:scale-95 shadow-md flex-shrink-0"
                         >
-                            <X size={28} strokeWidth={3} />
+                            <X size={28} />
                         </button>
                     </div>
                 </div>
