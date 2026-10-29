@@ -34,11 +34,11 @@ public class DevSeeder implements CommandLineRunner {
     private final CouponRepo couponRepo;
     private final AddressRepo addressRepo;
 
-    private static final String BACKPACK = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg";
-    private static final String KEYBOARD = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg";
-    private static final String PLUSHIE = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg";
-    private static final String TSHIRT = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg";
-    private static final String EARPHONES = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg";
+    private static final String BACKPACK = "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264012/Springboot-Ecommerce/products/backpack.jpg";
+    private static final String KEYBOARD = "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264017/Springboot-Ecommerce/products/keyboard.jpg";
+    private static final String PLUSHIE = "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264020/Springboot-Ecommerce/products/plushie.jpg";
+    private static final String TSHIRT = "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264023/Springboot-Ecommerce/products/tshirt.jpg";
+    private static final String EARPHONES = "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264014/Springboot-Ecommerce/products/earphones.jpg";
 
     @Override
     @Transactional
@@ -150,7 +150,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 10,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264012/Springboot-Ecommerce/products/backpack.jpg"
             )
         );
 
@@ -166,7 +166,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 8,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264017/Springboot-Ecommerce/products/keyboard.jpg"
             )
         );
 
@@ -182,7 +182,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 20,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264020/Springboot-Ecommerce/products/plushie.jpg"
             )
         );
 
@@ -198,7 +198,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 50,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264023/Springboot-Ecommerce/products/tshirt.jpg"
             )
         );
 
@@ -214,7 +214,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 15,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264014/Springboot-Ecommerce/products/earphones.jpg"
             )
         );
 
@@ -230,7 +230,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 30,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264023/Springboot-Ecommerce/products/tshirt.jpg"
             )
         );
 
@@ -246,7 +246,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 25,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264017/Springboot-Ecommerce/products/keyboard.jpg"
             )
         );
 
@@ -262,7 +262,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 40,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264012/Springboot-Ecommerce/products/backpack.jpg"
             )
         );
 
@@ -278,7 +278,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 100,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264020/Springboot-Ecommerce/products/plushie.jpg"
             )
         );
 
@@ -294,7 +294,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 50,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264014/Springboot-Ecommerce/products/earphones.jpg"
             )
         );
 
@@ -310,7 +310,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 200,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264017/Springboot-Ecommerce/products/keyboard.jpg"
             )
         );
 
@@ -326,7 +326,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 15,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264014/Springboot-Ecommerce/products/earphones.jpg"
             )
         );
 
@@ -342,7 +342,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 5,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264020/Springboot-Ecommerce/products/plushie.jpg"
             )
         );
 
@@ -358,7 +358,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 true,
                 45,
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264023/Springboot-Ecommerce/products/tshirt.jpg"
             )
         );
 
@@ -374,7 +374,7 @@ public class DevSeeder implements CommandLineRunner {
                 new Date(),
                 false, // Set to false to test out-of-stock logic!
                 0, // 0 quantity
-                "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg"
+                "https://res.cloudinary.com/dhagorcpe/image/upload/v1793264012/Springboot-Ecommerce/products/backpack.jpg"
             )
         );
 
