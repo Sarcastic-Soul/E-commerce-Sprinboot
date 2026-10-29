@@ -179,6 +179,9 @@ public class AuthController {
     public ResponseEntity<Void> csrf(
         org.springframework.security.web.csrf.CsrfToken token
     ) {
+        // The token is deferred: only reading its value makes the repository
+        // write the XSRF-TOKEN cookie. Taking the parameter alone does nothing.
+        token.getToken();
         return ResponseEntity.ok().build();
     }
 

@@ -2,7 +2,7 @@ package com.anish.e_commerce.config;
 
 import com.anish.e_commerce.jwt.JwtAuthFilter;
 import com.anish.e_commerce.service.UserDetailsServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
@@ -60,6 +61,13 @@ public class SecurityConfig {
                         new CsrfTokenRequestAttributeHandler()
                     )
                     .ignoringRequestMatchers("/api/auth/**")
+                    // With STATELESS sessions every JWT-authenticated request looks
+                    // like a fresh login, and the default strategy then clears the
+                    // XSRF-TOKEN cookie on each one, so every other POST got a 403.
+                    // Rotation guards against session fixation; there is no session.
+                    .sessionAuthenticationStrategy(
+                        new NullAuthenticatedSessionStrategy()
+                    )
             )
             .authorizeHttpRequests(auth ->
                 auth

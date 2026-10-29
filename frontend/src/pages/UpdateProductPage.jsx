@@ -15,7 +15,6 @@ export default function UpdateProduct() {
 
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
-    const [fileSize, setFileSize] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -27,7 +26,7 @@ export default function UpdateProduct() {
                 if (res.data.imageUrl) setPreview(res.data.imageUrl);
                 setLoading(false);
             })
-            .catch((err) => {
+            .catch(() => {
                 setError('Product not found');
                 setLoading(false);
             });
@@ -47,11 +46,12 @@ export default function UpdateProduct() {
 
         setImage(file);
         setPreview(URL.createObjectURL(file));
-        setFileSize(sizeInMB);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
         try {
             let updatedProduct = { ...product };
@@ -77,6 +77,8 @@ export default function UpdateProduct() {
             if (status === 403) toast.error('Not authorized.');
             else if (status === 404) toast.error('Product not found.');
             else toast.error('Update failed.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

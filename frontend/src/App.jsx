@@ -48,9 +48,10 @@ function InnerApp() {
             // Request the specific page
             const response = await api.get(`/products?page=${page}&size=12`);
 
-            // Extract the 'content' array from the Spring Boot Page object
+            // Spring serializes Page VIA_DTO (see ECommerceApplication): items in
+            // `content`, totals nested under `page`.
             setProducts(response.data.content || response.data);
-            setTotalPages(response.data.totalPages || 1);
+            setTotalPages(response.data.page?.totalPages || 1);
             setError(null);
         } catch (err) {
             setError("Failed to fetch products. Please try again later.");
@@ -84,7 +85,7 @@ function InnerApp() {
 
         if (data?.content) {
             setProducts(data.content);
-            setTotalPages(data.totalPages || 1);
+            setTotalPages(data.page?.totalPages || 1);
         } else {
             setProducts(Array.isArray(data) ? data : []);
             setTotalPages(1);
