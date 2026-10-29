@@ -33,6 +33,9 @@ jobs:
                       VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
                   # Change this tag to whatever you want
                   tags: ${{ secrets.DOCKER_USERNAME }}/brutshop-fullstack:latest
+                  # Reuse layers (Maven/pnpm dependencies) across runs.
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
             - name: Trigger Render Deploy
               if: success()
