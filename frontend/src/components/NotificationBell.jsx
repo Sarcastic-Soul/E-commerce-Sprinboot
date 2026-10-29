@@ -9,11 +9,6 @@ export default function NotificationBell() {
     const { darkMode } = useTheme();
     const dropdownRef = useRef(null);
 
-    // Fetch notifications on load
-    useEffect(() => {
-        fetchNotifications();
-    }, []);
-
     // Close dropdown if clicking outside of it
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -29,14 +24,14 @@ export default function NotificationBell() {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const fetchNotifications = async () => {
-        try {
-            const response = await api.get("/user/notifications");
-            setNotifications(response.data);
-        } catch (error) {
-            console.error("Failed to fetch notifications:", error);
-        }
-    };
+    // Fetch notifications on load
+    useEffect(() => {
+        api.get("/user/notifications")
+            .then((response) => setNotifications(response.data))
+            .catch((error) =>
+                console.error("Failed to fetch notifications:", error),
+            );
+    }, []);
 
     const handleMarkAsRead = async (id, e) => {
         e.stopPropagation(); // Don't close the dropdown

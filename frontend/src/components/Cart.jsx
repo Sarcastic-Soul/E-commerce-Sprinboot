@@ -15,25 +15,16 @@ export default function Cart({ closeCart }) {
     const { setCartItemCount } = useCart();
 
     const [cartItems, setCartItems] = useState([]);
-    const [cartTotal, setCartTotal] = useState(0);
+    const cartTotal = cartItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+    );
 
-    const fetchCart = async () => {
-        try {
-            const res = await api.get(`/cart/${user.username}`);
-            setCartItems(res.data || []);
-            calculateTotal(res.data || []);
-        } catch (err) {
-            toast.error("Failed to fetch cart");
-        }
-    };
-
-    const calculateTotal = (items) => {
-        const total = items.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0,
-        );
-        setCartTotal(total);
-    };
+    useEffect(() => {
+        api.get(`/cart/${user.username}`)
+            .then((res) => setCartItems(res.data || []))
+            .catch(() => toast.error("Failed to fetch cart"));
+    }, [user.username]);
 
     const updateQuantity = async (productId, delta) => {
         const item = cartItems.find((item) => item.id === productId);
@@ -46,8 +37,7 @@ export default function Cart({ closeCart }) {
                 params: { productId, quantity: newQty },
             });
             setCartItems(res.data);
-            calculateTotal(res.data);
-        } catch (err) {
+        } catch {
             toast.error("Failed to update quantity");
         }
     };
@@ -58,13 +48,12 @@ export default function Cart({ closeCart }) {
                 params: { productId },
             });
             setCartItems(res.data);
-            calculateTotal(res.data);
             const totalCount = res.data.reduce(
                 (acc, item) => acc + item.quantity,
                 0,
             );
             setCartItemCount(totalCount);
-        } catch (err) {
+        } catch {
             toast.error("Failed to remove item");
         }
     };
@@ -73,9 +62,8 @@ export default function Cart({ closeCart }) {
         try {
             await api.delete(`/cart/${user.username}/clear`);
             setCartItems([]);
-            setCartTotal(0);
             setCartItemCount(0);
-        } catch (err) {
+        } catch {
             toast.error("Failed to clear cart");
         }
     };
@@ -123,11 +111,10 @@ export default function Cart({ closeCart }) {
                                 "Payment successful! Order placed. 🚀",
                             );
                             setCartItems([]);
-                            setCartTotal(0);
-                            setCartItemCount(0);
+                                            setCartItemCount(0);
                             closeCart();
                         }
-                    } catch (err) {
+                    } catch {
                         toast.error("Payment verification failed");
                     }
                 },
@@ -176,8 +163,6 @@ export default function Cart({ closeCart }) {
     };
 
     useEffect(() => {
-        fetchCart();
-
         const timer = setTimeout(() => {
             if (cartRef.current) cartRef.current.classList.add("translate-x-0");
         }, 10);
@@ -187,6 +172,7 @@ export default function Cart({ closeCart }) {
 
         // Stop the page behind the overlay from scrolling.
         const previousOverflow = document.body.style.overflow;
+        // eslint-disable-next-line react-hooks/immutability -- intentional DOM side effect, undone in cleanup
         document.body.style.overflow = "hidden";
 
         const handleClickOutside = (e) => {

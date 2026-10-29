@@ -24,6 +24,9 @@ export default [
       ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // New in react-hooks v7. It flags the plain fetch-on-mount pattern
+      // (setLoading(true) then await), which is fine here, so keep it a hint.
+      'react-hooks/set-state-in-effect': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

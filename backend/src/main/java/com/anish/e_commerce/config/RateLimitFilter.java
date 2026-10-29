@@ -1,9 +1,8 @@
 package com.anish.e_commerce.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,10 +49,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int CATALOG_LIMIT = 120;
 
     private Bucket createNewBucket(int capacity) {
-        Bandwidth limit = Bandwidth.classic(
-            capacity,
-            Refill.greedy(capacity, Duration.ofMinutes(1))
-        );
+        Bandwidth limit = Bandwidth.builder()
+            .capacity(capacity)
+            .refillGreedy(capacity, Duration.ofMinutes(1))
+            .build();
         return Bucket.builder().addLimit(limit).build();
     }
 

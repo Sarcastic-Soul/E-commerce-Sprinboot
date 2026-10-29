@@ -1,5 +1,5 @@
 import { ShoppingCart, Heart, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -28,11 +28,13 @@ export default function ProductCard({
 
     const imageUrl = productImage(product.imageUrl, 400);
 
-    useEffect(() => {
-        if (initialIsWishlisted !== null) {
-            setIsWishlisted(initialIsWishlisted);
-        }
-    }, [initialIsWishlisted]);
+    // Follow the parent's value when it changes (e.g. the wishlist finished
+    // loading). Done during render, not in an effect, to avoid a second render.
+    const [prevInitial, setPrevInitial] = useState(initialIsWishlisted);
+    if (initialIsWishlisted !== prevInitial) {
+        setPrevInitial(initialIsWishlisted);
+        if (initialIsWishlisted !== null) setIsWishlisted(initialIsWishlisted);
+    }
 
     const handleWishlistToggle = async (e) => {
         e.stopPropagation();
@@ -54,7 +56,7 @@ export default function ProductCard({
             if (onWishlistChange) {
                 onWishlistChange(product.id, newState);
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to update wishlist");
         }
     };

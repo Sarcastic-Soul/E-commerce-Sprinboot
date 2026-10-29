@@ -3,9 +3,8 @@ package com.anish.e_commerce.jwt;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -45,12 +44,12 @@ class JwtUtilTest {
 
     @Test
     void isTokenValid_FalseForExpiredToken() {
-        Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
+        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
         String expired = Jwts.builder()
-            .setSubject("alice")
-            .setIssuedAt(new Date(System.currentTimeMillis() - 100_000))
-            .setExpiration(new Date(System.currentTimeMillis() - 50_000))
-            .signWith(key, SignatureAlgorithm.HS256)
+            .subject("alice")
+            .issuedAt(new Date(System.currentTimeMillis() - 100_000))
+            .expiration(new Date(System.currentTimeMillis() - 50_000))
+            .signWith(key, Jwts.SIG.HS256)
             .compact();
 
         assertFalse(jwtUtil.isTokenValid(expired));
@@ -68,12 +67,12 @@ class JwtUtilTest {
 
     @Test
     void extractRoles_EmptyWhenClaimMissing() {
-        Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
+        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
         String noRolesClaim = Jwts.builder()
-            .setSubject("bob")
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + 60_000))
-            .signWith(key, SignatureAlgorithm.HS256)
+            .subject("bob")
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + 60_000))
+            .signWith(key, Jwts.SIG.HS256)
             .compact();
 
         assertTrue(jwtUtil.extractRoles(noRolesClaim).isEmpty());

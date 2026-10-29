@@ -16,7 +16,7 @@ export default function OrderHistoryPage() {
             try {
                 const res = await api.get("/orders/history");
                 setOrders(res.data);
-            } catch (err) {
+            } catch {
                 console.error("Failed to fetch orders");
             } finally {
                 setLoading(false);

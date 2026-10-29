@@ -28,6 +28,5 @@ public class Notification {
 
     private boolean isRead = false;
 
-    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt = new Date();
 }

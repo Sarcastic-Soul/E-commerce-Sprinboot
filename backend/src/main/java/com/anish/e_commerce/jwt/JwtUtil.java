@@ -3,7 +3,7 @@ package com.anish.e_commerce.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class JwtUtil {
 
-    private final Key signingKey;
+    private final SecretKey signingKey;
     private final long expiration;
 
     public JwtUtil(
@@ -25,7 +25,7 @@ public class JwtUtil {
             log.warn(
                 "⚠️ JWT secret is missing or too short. Using generated secure key for dev only!"
             );
-            this.signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            this.signingKey = Jwts.SIG.HS256.key().build();
         } else {
             this.signingKey = Keys.hmacShaKeyFor(
                 secret.getBytes(StandardCharsets.UTF_8)
@@ -39,11 +39,11 @@ public class JwtUtil {
         claims.put("roles", roles);
 
         return Jwts.builder()
-            .setSubject(username)
-            .addClaims(claims)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + expiration))
-            .signWith(signingKey, SignatureAlgorithm.HS256)
+            .subject(username)
+            .claims(claims)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + expiration))
+            .signWith(signingKey, Jwts.SIG.HS256)
             .compact();
     }
 
@@ -72,10 +72,10 @@ public class JwtUtil {
     }
 
     private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(signingKey)
+        return Jwts.parser()
+            .verifyWith(signingKey)
             .build()
-            .parseClaimsJws(token)
-            .getBody();
+            .parseSignedClaims(token)
+            .getPayload();
     }
 }

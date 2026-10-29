@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
             const res = await axios.post("/auth/login", { username, password });
             setUser(toUser(res.data));
         } catch (err) {
-            throw new Error("Login failed");
+            throw new Error("Login failed", { cause: err });
         }
     };
 
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
             await login(username, password); // auto-login
         } catch (err) {
             const message = err.response?.data?.message || "Signup failed";
-            throw new Error(message);
+            throw new Error(message, { cause: err });
         }
     };
 
