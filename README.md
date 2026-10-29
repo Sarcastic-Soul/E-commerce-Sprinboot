@@ -67,8 +67,8 @@ graph TD
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | React 19 (Vite), Tailwind CSS 4, React Router 7, Axios, Recharts, Lucide, Sonner |
-| **Backend** | Spring Boot 3.4 (Java 21), Spring Security + JWT, Spring Data JPA, Bucket4j |
+| **Frontend** | React 19 (Vite 8), Tailwind CSS 4, React Router 7, Axios, Recharts, Phosphor Icons, Sonner |
+| **Backend** | Spring Boot 4.1 (Java 21+, Java 25 in Docker), Spring Security + JWT, Spring Data JPA, Bucket4j |
 | **Data** | PostgreSQL (Neon in prod), Redis (API cache + refresh-token TTL) |
 | **Integrations** | Razorpay (payments, test mode), Cloudinary (image hosting) |
 | **Testing** | JUnit 5, Mockito, Spring Security Test |
@@ -114,8 +114,7 @@ cp backend/secrets.properties.example backend/secrets.properties    # optional, 
 cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 2. Frontend → localhost:3000
-cd frontend && echo "VITE_RAZORPAY_KEY_ID=rzp_test_your_key" > .env
-pnpm install && pnpm dev
+cd frontend && pnpm install && pnpm dev
 ```
 
 - `-Dspring-boot.run.profiles=dev` is **required** — the app defaults to `prod`.
@@ -135,9 +134,9 @@ Local values live in `backend/secrets.properties` (gitignored + dockerignored); 
 | `REDIS_URL` | Prod | Redis — dev uses localhost defaults |
 | `SPRING_PROFILES_ACTIVE` | Prod | Set to `prod` |
 | `CLOUDINARY_CLOUD_NAME` `_API_KEY` `_API_SECRET` | Optional | Image upload |
-| `RAZORPAY_KEY_ID` `_KEY_SECRET` | Optional | Checkout + signature verification |
+| `RAZORPAY_KEY_ID` `_KEY_SECRET` | Optional | Checkout + signature verification. The frontend reads the key ID from `/api/payments/config`, so rotating keys needs no rebuild |
 
-**GitHub Actions secrets:** `DOCKER_USERNAME` · `DOCKER_PASSWORD` · `VITE_RAZORPAY_KEY_ID` · `RENDER_DEPLOY_HOOK`
+**GitHub Actions secrets:** `DOCKER_USERNAME` · `DOCKER_PASSWORD` · `RENDER_DEPLOY_HOOK`
 
 ---
 

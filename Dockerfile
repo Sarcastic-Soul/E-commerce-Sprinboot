@@ -12,10 +12,6 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 COPY frontend/ ./
 
-# Pass the Razorpay Key to Vite during the build
-ARG VITE_RAZORPAY_KEY_ID
-ENV VITE_RAZORPAY_KEY_ID=$VITE_RAZORPAY_KEY_ID
-
 # Output goes to /app/frontend/dist
 RUN pnpm run build
 

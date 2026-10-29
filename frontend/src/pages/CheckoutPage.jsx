@@ -19,7 +19,7 @@ import AddressForm from "../components/AddressForm";
 import AddressLines from "../components/AddressLines";
 import { productImage, PLACEHOLDER } from "../utils/image.js";
 import { errorMessage, formatMoney } from "../utils/format.js";
-import { loadRazorpayScript, openRazorpay } from "../utils/razorpay.js";
+import { fetchKeyId, loadRazorpayScript, openRazorpay } from "../utils/razorpay.js";
 import { btn, focusRing, inputCls, labelCls, panel } from "../utils/ui.js";
 
 export default function CheckoutPage() {
@@ -119,8 +119,11 @@ export default function CheckoutPage() {
         }
         setPaying(true);
 
-        const isLoaded = await loadRazorpayScript();
-        if (!isLoaded) {
+        const [isLoaded, keyId] = await Promise.all([
+            loadRazorpayScript(),
+            fetchKeyId().catch(() => null),
+        ]);
+        if (!isLoaded || !keyId) {
             toast.error("Could not load Razorpay. Check your connection.");
             setPaying(false);
             return;
@@ -141,6 +144,7 @@ export default function CheckoutPage() {
 
         openRazorpay({
             order,
+            keyId,
             username: user.username,
             darkMode,
             onSuccess: () => {

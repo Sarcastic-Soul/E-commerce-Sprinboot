@@ -29,6 +29,19 @@ async function markFailed(razorpayOrderId) {
     }
 }
 
+// The public key ID comes from the backend, so rotating keys needs no rebuild.
+let keyIdPromise;
+export function fetchKeyId() {
+    keyIdPromise ??= api
+        .get("/payments/config")
+        .then((res) => res.data.keyId)
+        .catch((err) => {
+            keyIdPromise = undefined; // let the next attempt retry
+            throw err;
+        });
+    return keyIdPromise;
+}
+
 /**
  * Opens the Razorpay modal for an order returned by POST /orders/place.
  * `order.totalAmount` is already the discounted amount.
@@ -36,7 +49,7 @@ async function markFailed(razorpayOrderId) {
  * onSuccess() runs after /payments/verify confirms; onFailure(message) runs when
  * the user closes the modal, the payment fails, or verification fails.
  */
-export function openRazorpay({ order, username, darkMode, onSuccess, onFailure }) {
+export function openRazorpay({ order, keyId, username, darkMode, onSuccess, onFailure }) {
     // payment.failed and ondismiss can both fire for one attempt; report once.
     let settled = false;
     const fail = async (message) => {
@@ -47,7 +60,7 @@ export function openRazorpay({ order, username, darkMode, onSuccess, onFailure }
     };
 
     const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_your_dummy_key_id",
+        key: keyId,
         amount: Math.round(Number(order.totalAmount) * 100),
         currency: "INR",
         name: "BrutShop",

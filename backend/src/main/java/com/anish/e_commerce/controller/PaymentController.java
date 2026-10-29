@@ -5,6 +5,7 @@ import com.anish.e_commerce.service.OrderService;
 import com.anish.e_commerce.service.PaymentService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,6 +19,17 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final OrderService orderService;
+
+    // The key ID is public (Razorpay's checkout script needs it in the browser),
+    // so the frontend asks for it here instead of having it baked in at build
+    // time. Rotating keys then only means changing the backend's env vars.
+    @Value("${razorpay.key.id}")
+    private String razorpayKeyId;
+
+    @GetMapping("/config")
+    public Map<String, String> paymentConfig() {
+        return Map.of("keyId", razorpayKeyId);
+    }
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyPayment(
