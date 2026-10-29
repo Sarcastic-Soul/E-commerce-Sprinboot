@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
@@ -81,7 +82,17 @@ public class SecurityConfig {
                     // 1. Public API Endpoints
                     .requestMatchers("/api/auth/**")
                     .permitAll()
-                    .requestMatchers("/api/products/**", "/api/product/**")
+                    // Catalog reads are public, writes are not. GET only: product
+                    // add/update/delete and review writes live under the same paths,
+                    // and a method-less permitAll here let anonymous callers reach them.
+                    // Your own review (/reviews/me) needs a user, so it is carved out first.
+                    .requestMatchers(HttpMethod.GET, "/api/product/*/reviews/me")
+                    .authenticated()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/api/products/**",
+                        "/api/product/**"
+                    )
                     .permitAll()
                     // 2. Secured API Endpoints
                     .requestMatchers("/api/admin/**")

@@ -49,6 +49,11 @@ public class CartService {
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
+        // Soft-deleted products stay in the table for order history, not for sale.
+        if (!product.isActive()) {
+            throw new BusinessException(product.getName() + " is no longer available.");
+        }
+
         if (quantity > product.getQuantity()) {
             throw new BusinessException(
                 "Only " + product.getQuantity() + " unit(s) of " + product.getName() + " available."

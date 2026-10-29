@@ -1,5 +1,6 @@
 package com.anish.e_commerce.controller;
 
+import com.anish.e_commerce.exception.BusinessException;
 import com.anish.e_commerce.service.OrderService;
 import com.anish.e_commerce.service.PaymentService;
 import java.util.Map;
@@ -37,6 +38,7 @@ public class PaymentController {
             try {
                 orderService.processSuccessfulPayment(
                     razorpayOrderId,
+                    razorpayPaymentId,
                     authentication.getName()
                 );
                 return ResponseEntity.ok(
@@ -49,6 +51,11 @@ public class PaymentController {
                 );
             } catch (AccessDeniedException e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    Map.of("error", e.getMessage())
+                );
+            } catch (BusinessException e) {
+                // e.g. the order expired while the user was on the payment page.
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     Map.of("error", e.getMessage())
                 );
             } catch (RuntimeException e) {

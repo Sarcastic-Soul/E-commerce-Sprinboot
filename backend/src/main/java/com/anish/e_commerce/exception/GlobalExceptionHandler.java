@@ -10,12 +10,15 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -128,6 +131,47 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    // Malformed JSON, or a value that does not fit its type (e.g. an unknown order
+    // status, ?status=BOGUS): the caller's mistake, so a 400 rather than a 500.
+    // The parser's own message is not echoed back, since it names internal classes.
+    @ExceptionHandler(
+        {
+            HttpMessageNotReadableException.class,
+            MethodArgumentTypeMismatchException.class,
+        }
+    )
+    public ResponseEntity<ApiErrorResponse> handleUnreadableInput(
+        Exception ex,
+        HttpServletRequest request
+    ) {
+        String message =
+            ex instanceof MethodArgumentTypeMismatchException mismatch
+                ? "Invalid value for parameter '" + mismatch.getName() + "'"
+                : "Malformed or invalid request body";
+        ApiErrorResponse response = buildErrorResponse(
+            HttpStatus.BAD_REQUEST,
+            "Bad Request",
+            message,
+            request.getRequestURI()
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    // Right path, wrong HTTP method: a 405, not a logged 500.
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(
+        HttpRequestMethodNotSupportedException ex,
+        HttpServletRequest request
+    ) {
+        ApiErrorResponse response = buildErrorResponse(
+            HttpStatus.METHOD_NOT_ALLOWED,
+            "Method Not Allowed",
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+        return new ResponseEntity<>(response, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     // Fallback for any other unhandled exceptions

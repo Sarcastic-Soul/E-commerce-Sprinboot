@@ -106,8 +106,13 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void deleteByUserId_DelegatesToRepo() {
+    void deleteByUserId_DeletesEveryTokenOfThatUser() {
+        RefreshToken a = RefreshToken.builder().token("a").userId(5L).build();
+        RefreshToken b = RefreshToken.builder().token("b").userId(5L).build();
+        when(refreshTokenRepo.findByUserId(5L)).thenReturn(java.util.List.of(a, b));
+
         refreshTokenService.deleteByUserId(5L);
-        verify(refreshTokenRepo, times(1)).deleteByUserId(5L);
+
+        verify(refreshTokenRepo, times(1)).deleteAll(java.util.List.of(a, b));
     }
 }

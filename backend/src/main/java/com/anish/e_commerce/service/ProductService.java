@@ -35,12 +35,52 @@ public class ProductService {
     @Autowired
     private NotificationService notificationService;
 
-    @Cacheable(value = "products", key = "'page-' + #page + '-size-' + #size")
-    public Page<Product> getAllProducts(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return productRepo.findAll(pageable);
+    /**
+     * Collapses any client value to one of the known sort keys before it reaches a
+     * cache key, so junk values cannot mint unlimited cache entries.
+     */
+    public static String canonicalSort(String sort) {
+        String key = sort == null ? "" : sort.trim().toLowerCase();
+        return switch (key) {
+            case "price_asc", "asc" -> "price_asc";
+            case "price_desc", "desc" -> "price_desc";
+            case "rating", "name" -> key;
+            default -> "newest";
+        };
     }
 
+    /**
+     * Maps the contract's sort values to a Sort. Unknown values fall back to newest;
+     * the legacy "asc"/"desc" from the filter endpoint still mean price.
+     */
+    static Sort toSort(String sort) {
+        return switch (canonicalSort(sort)) {
+            case "price_asc" -> Sort.by(Sort.Order.asc("price"), Sort.Order.asc("id"));
+            case "price_desc" -> Sort.by(Sort.Order.desc("price"), Sort.Order.asc("id"));
+            case "rating" -> Sort.by(
+                Sort.Order.desc("averageRating"),
+                Sort.Order.desc("reviewCount"),
+                Sort.Order.asc("id")
+            );
+            case "name" -> Sort.by(Sort.Order.asc("name"), Sort.Order.asc("id"));
+            default -> Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
+        };
+    }
+
+    // Sort is part of the key, otherwise one ordering would be served for all.
+    @Cacheable(
+        value = "products",
+        key = "'page-' + #page + '-size-' + #size + '-sort-' + #sort"
+    )
+    public Page<Product> getAllProducts(int page, int size, String sort) {
+        Pageable pageable = PageRequest.of(page, size, toSort(sort));
+        return productRepo.findByActiveTrue(pageable);
+    }
+
+    /**
+     * Returns inactive (soft-deleted) products too; the controller hides those from
+     * everyone but admins. Cached as-is so both audiences share one entry.
+     */
     @Cacheable(value = "product", key = "#id")
     public Product getProductById(int id) {
         return productRepo
@@ -62,10 +102,11 @@ public class ProductService {
         Boolean available,
         String sortDir
     ) {
-        Sort sort = "desc".equalsIgnoreCase(sortDir)
-            ? Sort.by("price").descending()
-            : Sort.by("price").ascending();
-        Pageable pageable = PageRequest.of(0, MAX_UNPAGINATED_RESULTS, sort);
+        Pageable pageable = PageRequest.of(
+            0,
+            MAX_UNPAGINATED_RESULTS,
+            toSort(sortDir)
+        );
 
         return productRepo.filterProducts(
             keyword,
@@ -96,7 +137,12 @@ public class ProductService {
         }
     }
 
-    @CacheEvict(value = "products", allEntries = true)
+    @Caching(
+        evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product", key = "#result.id"),
+        }
+    )
     public Product addProduct(Product product) throws IOException {
         enforceStockRules(product);
         return productRepo.save(product);
@@ -148,6 +194,13 @@ public class ProductService {
         if (updatedProduct.getImageUrl() != null) {
             existing.setImageUrl(updatedProduct.getImageUrl());
         }
+        // null = the client did not send a gallery; leave it alone. Mutated in place
+        // so Hibernate keeps tracking the same collection instance.
+        if (updatedProduct.getImages() != null) {
+            List<String> images = cleanImages(updatedProduct.getImages());
+            existing.getImages().clear();
+            existing.getImages().addAll(images);
+        }
         return productRepo.save(existing);
     }
 
@@ -157,16 +210,30 @@ public class ProductService {
             @CacheEvict(value = "product", key = "#id"),
         }
     )
+    /**
+     * Soft delete. Order history still references the row (and shows its image),
+     * so the product is only hidden from the catalog, never removed.
+     */
     public void deleteProduct(int id) {
         Product existing = productRepo
             .findById(id)
             .orElseThrow(() ->
                 new ResourceNotFoundException("Product not found with id: " + id)
             );
-        if (existing.getImageUrl() != null) {
-            imageHandleService.deleteImageByUrl(existing.getImageUrl());
-        }
-        productRepo.deleteById(id);
+        existing.setActive(false);
+        productRepo.save(existing);
+    }
+
+    /** Drops blanks and duplicates, keeps order. */
+    public static List<String> cleanImages(List<String> images) {
+        if (images == null) return new java.util.ArrayList<>();
+        return images
+            .stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .distinct()
+            .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
     }
 
     public List<Product> searchProducts(String keyword) {

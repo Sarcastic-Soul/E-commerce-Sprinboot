@@ -86,7 +86,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         Integer capacity = null;
         String scope = null;
-        if (path.startsWith("/api/auth/")) {
+        // Only the password endpoints get the brute-force budget. /me and /csrf run
+        // on every page load, so counting them logged people out after a few reloads.
+        if (path.equals("/api/auth/login") || path.equals("/api/auth/signup")) {
             capacity = AUTH_LIMIT;
             scope = "auth";
         } else if (

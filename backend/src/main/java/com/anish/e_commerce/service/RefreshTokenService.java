@@ -44,8 +44,10 @@ public class RefreshTokenService {
         return token;
     }
 
+    // Looked up through the @Indexed userId and deleted by id: derived delete
+    // queries are not something Redis repositories can be relied on for.
     public void deleteByUserId(Long userId) {
-        refreshTokenRepo.deleteByUserId(userId);
+        refreshTokenRepo.deleteAll(refreshTokenRepo.findByUserId(userId));
     }
 
     public void deleteByToken(String token) {

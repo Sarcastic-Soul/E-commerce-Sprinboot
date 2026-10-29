@@ -3,6 +3,7 @@ package com.anish.e_commerce.service;
 import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.Notification;
 import com.anish.e_commerce.model.Product;
+import com.anish.e_commerce.model.User;
 import com.anish.e_commerce.model.Wishlist;
 import com.anish.e_commerce.repo.NotificationRepo;
 import com.anish.e_commerce.repo.WishlistRepo;
@@ -32,6 +33,13 @@ public class NotificationService {
             );
             notificationRepo.save(notification);
         }
+    }
+
+    public void notifyUser(User user, String message) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setMessage(message);
+        notificationRepo.save(notification);
     }
 
     public List<Notification> getUserNotifications(Long userId) {

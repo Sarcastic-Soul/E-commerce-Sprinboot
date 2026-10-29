@@ -1,13 +1,21 @@
 package com.anish.e_commerce.config;
 
+import com.anish.e_commerce.model.Address;
+import com.anish.e_commerce.model.Coupon;
+import com.anish.e_commerce.model.Coupon.CouponType;
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.model.Product.ProductCategory;
 import com.anish.e_commerce.model.User;
+import com.anish.e_commerce.repo.AddressRepo;
+import com.anish.e_commerce.repo.CouponRepo;
 import com.anish.e_commerce.repo.ProductRepo;
 import com.anish.e_commerce.repo.UserRepo;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +31,87 @@ public class DevSeeder implements CommandLineRunner {
     private final ProductRepo productRepo;
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final CouponRepo couponRepo;
+    private final AddressRepo addressRepo;
+
+    private static final String BACKPACK = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/backpack_vcbd8g.jpg";
+    private static final String KEYBOARD = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491563/keyboard_fk5yo0.jpg";
+    private static final String PLUSHIE = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491560/plushie_pkjwfl.jpg";
+    private static final String TSHIRT = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491562/tshirt_jngcar.jpg";
+    private static final String EARPHONES = "https://res.cloudinary.com/dhagorcpe/image/upload/v1752491838/earphones_lkhors.jpg";
 
     @Override
     @Transactional
     public void run(String... args) {
         seedUsers();
         seedProducts();
+        seedGalleryImages();
+        seedCoupons();
+        seedDefaultAddress();
+    }
+
+    /**
+     * A few products get a gallery so the detail page has something to show.
+     * Only fills an empty gallery, so re-running (or an admin's edits) is safe.
+     * Reuses the existing seeded Cloudinary images.
+     */
+    private void seedGalleryImages() {
+        Map<String, List<String>> galleries = Map.of(
+            "CyberBackpack", List.of(TSHIRT, EARPHONES),
+            "Duckboard Keyboard", List.of(EARPHONES, BACKPACK),
+            "Duck Plushie", List.of(TSHIRT, KEYBOARD)
+        );
+        galleries.forEach((name, images) ->
+            productRepo
+                .findFirstByName(name)
+                .filter(p -> p.getImages().isEmpty())
+                .ifPresent(p -> {
+                    p.getImages().addAll(images);
+                    productRepo.save(p);
+                })
+        );
+    }
+
+    private void seedCoupons() {
+        if (couponRepo.count() > 0) return;
+
+        Coupon welcome = new Coupon();
+        welcome.setCode("WELCOME10");
+        welcome.setType(CouponType.PERCENT);
+        welcome.setValue(new BigDecimal("10.00"));
+        welcome.setMinOrderAmount(BigDecimal.ZERO);
+        couponRepo.save(welcome);
+
+        Coupon flat = new Coupon();
+        flat.setCode("FLAT50");
+        flat.setType(CouponType.FLAT);
+        flat.setValue(new BigDecimal("50.00"));
+        flat.setMinOrderAmount(new BigDecimal("500.00"));
+        couponRepo.save(flat);
+
+        log.info("✅ DevSeeder inserted coupons WELCOME10 and FLAT50");
+    }
+
+    private void seedDefaultAddress() {
+        userRepo
+            .findByUsername("user")
+            .filter(u -> addressRepo.countByUser_Username(u.getUsername()) == 0)
+            .ifPresent(u -> {
+                Address address = new Address();
+                address.setUser(u);
+                address.setFullName("Asha Rao");
+                address.setPhone("9876543210");
+                address.setLine1("12 MG Road");
+                address.setLine2("Flat 4B");
+                address.setCity("Bengaluru");
+                address.setState("Karnataka");
+                address.setPostalCode("560001");
+                address.setCountry("India");
+                address.setDefaultAddress(true);
+                address.setCreatedAt(LocalDateTime.now());
+                addressRepo.save(address);
+                log.info("✅ DevSeeder inserted a default address for 'user'");
+            });
     }
 
     private void seedUsers() {

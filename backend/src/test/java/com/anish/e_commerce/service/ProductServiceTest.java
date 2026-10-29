@@ -1,6 +1,7 @@
 package com.anish.e_commerce.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.anish.e_commerce.model.Product;
@@ -56,18 +57,24 @@ public class ProductServiceTest {
         Page<Product> dummyPage = new PageImpl<>(List.of(dummyProduct));
 
         // Tell the mock database to return the fake Page when asked for ANY Pageable
-        when(productRepo.findAll(any(PageRequest.class))).thenReturn(dummyPage);
+        when(productRepo.findByActiveTrue(any(PageRequest.class))).thenReturn(dummyPage);
 
         // Act: Call the actual service method with page 0, size 12
-        Page<Product> productPage = productService.getAllProducts(0, 12);
+        Page<Product> productPage = productService.getAllProducts(0, 12, "newest");
 
         // Assert: Verify the results by extracting the content from the Page
         List<Product> products = productPage.getContent();
         assertEquals(1, products.size());
         assertEquals("Test Duck", products.get(0).getName());
 
-        // Verify the paginated version of findAll was called exactly once
-        verify(productRepo, times(1)).findAll(any(PageRequest.class));
+        // Only active products are listed, newest first.
+        org.mockito.ArgumentCaptor<PageRequest> captor =
+            org.mockito.ArgumentCaptor.forClass(PageRequest.class);
+        verify(productRepo, times(1)).findByActiveTrue(captor.capture());
+        assertEquals(
+            org.springframework.data.domain.Sort.Direction.DESC,
+            captor.getValue().getSort().getOrderFor("createdAt").getDirection()
+        );
     }
 
     @Test
@@ -160,17 +167,57 @@ public class ProductServiceTest {
     }
 
     @Test
-    void testDeleteProduct_WithImage_DeletesImageAndProduct() {
-        // Arrange
-        String imageUrl = "http://image-to-delete.com/duck.jpg";
+    void testDeleteProduct_SoftDeletesAndKeepsImage() {
+        String imageUrl = "http://image-to-keep.com/duck.jpg";
         dummyProduct.setImageUrl(imageUrl);
         when(productRepo.findById(1)).thenReturn(Optional.of(dummyProduct));
 
-        // Act
         productService.deleteProduct(1);
 
-        // Assert: Ensure both the image service and the DB delete methods were triggered
-        verify(imageHandleService, times(1)).deleteImageByUrl(imageUrl);
-        verify(productRepo, times(1)).deleteById(1);
+        // Orders still show this product, so neither the row nor its image goes.
+        assertFalse(dummyProduct.isActive());
+        verify(productRepo, times(1)).save(dummyProduct);
+        verify(productRepo, never()).deleteById(anyInt());
+        verify(imageHandleService, never()).deleteImageByUrl(anyString());
+    }
+
+    @Test
+    void testCanonicalSort_MapsContractAndLegacyValues() {
+        assertEquals("newest", ProductService.canonicalSort(null));
+        assertEquals("newest", ProductService.canonicalSort("garbage"));
+        assertEquals("price_asc", ProductService.canonicalSort("asc"));
+        assertEquals("price_desc", ProductService.canonicalSort("DESC"));
+        assertEquals("rating", ProductService.canonicalSort("rating"));
+        assertEquals("name", ProductService.canonicalSort("name"));
+
+        assertEquals(
+            "averageRating",
+            ProductService.toSort("rating").iterator().next().getProperty()
+        );
+        assertTrue(ProductService.toSort("price_desc").getOrderFor("price").isDescending());
+    }
+
+    @Test
+    void testUpdateProduct_ReplacesGalleryOnlyWhenSent() throws IOException {
+        dummyProduct.getImages().add("http://a.jpg");
+        when(productRepo.findById(1)).thenReturn(Optional.of(dummyProduct));
+        when(productRepo.save(any(Product.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Product noGallery = new Product(
+            1, "Test Duck", "A cool duck", "DuckCorp", new BigDecimal("19.99"),
+            Product.ProductCategory.TOYS_GAMES, new Date(), true, 10, "url"
+        );
+        noGallery.setImages(null);
+        assertEquals(List.of("http://a.jpg"), productService.updateProduct(noGallery).getImages());
+
+        Product withGallery = new Product(
+            1, "Test Duck", "A cool duck", "DuckCorp", new BigDecimal("19.99"),
+            Product.ProductCategory.TOYS_GAMES, new Date(), true, 10, "url"
+        );
+        withGallery.setImages(List.of(" http://b.jpg ", "", "http://b.jpg", "http://c.jpg"));
+        assertEquals(
+            List.of("http://b.jpg", "http://c.jpg"),
+            productService.updateProduct(withGallery).getImages()
+        );
     }
 }

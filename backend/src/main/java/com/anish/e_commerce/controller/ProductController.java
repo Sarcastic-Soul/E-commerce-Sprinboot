@@ -1,6 +1,7 @@
 package com.anish.e_commerce.controller;
 
 import com.anish.e_commerce.dto.ProductDTO;
+import com.anish.e_commerce.exception.ResourceNotFoundException;
 import com.anish.e_commerce.model.Product;
 import com.anish.e_commerce.service.ImageHandleService;
 import com.anish.e_commerce.service.ProductService;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,18 +34,31 @@ public class ProductController {
     @GetMapping("/products")
     public ResponseEntity<Page<Product>> getAllProducts(
         @RequestParam(defaultValue = "0") @Min(0) int page, // Default to page 0 (Spring is 0-indexed)
-        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size // Default to 12 items per page, capped so a caller cannot force a full-table load
+        @RequestParam(defaultValue = "12") @Min(1) @Max(100) int size, // Default to 12 items per page, capped so a caller cannot force a full-table load
+        @RequestParam(defaultValue = "newest") String sort
     ) {
-        Page<Product> productPage = productService.getAllProducts(page, size);
+        Page<Product> productPage = productService.getAllProducts(
+            page,
+            size,
+            ProductService.canonicalSort(sort)
+        );
         return new ResponseEntity<>(productPage, HttpStatus.OK);
     }
 
     @GetMapping("/product/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable int id) {
+    public ResponseEntity<Product> getProductById(
+        @PathVariable int id,
+        Authentication authentication
+    ) {
         if (id <= 0) return ResponseEntity.badRequest().build();
 
         // Missing ids surface as ResourceNotFoundException -> 404
-        return ResponseEntity.ok(productService.getProductById(id));
+        Product product = productService.getProductById(id);
+        // Soft-deleted products are invisible to everyone but admins.
+        if (!product.isActive() && !OrderController.isAdmin(authentication)) {
+            throw new ResourceNotFoundException("Product not found with id: " + id);
+        }
+        return ResponseEntity.ok(product);
     }
 
     @GetMapping("/products/filter")
@@ -62,7 +77,7 @@ public class ProductController {
                 minPrice,
                 maxPrice,
                 available,
-                sort
+                ProductService.canonicalSort(sort)
             )
         );
     }
@@ -82,6 +97,7 @@ public class ProductController {
         product.setAvailable(productDto.isAvailable());
         product.setQuantity(productDto.getQuantity());
         product.setImageUrl(productDto.getImageUrl());
+        product.setImages(ProductService.cleanImages(productDto.getImages()));
         product.setCreatedAt(new Date()); // Set creation date
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -106,6 +122,8 @@ public class ProductController {
         product.setAvailable(productDto.isAvailable());
         product.setQuantity(productDto.getQuantity());
         product.setImageUrl(productDto.getImageUrl());
+        // null (not sent) keeps the current gallery; see ProductService.updateProduct.
+        product.setImages(productDto.getImages());
 
         return ResponseEntity.ok(productService.updateProduct(product));
     }
@@ -127,7 +145,9 @@ public class ProductController {
         return ResponseEntity.ok(productService.searchProducts(keyword));
     }
 
+    // Only the admin product forms upload images; nobody else needs Cloudinary quota.
     @PostMapping("/upload-image")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> uploadImage(
         @RequestParam("image") MultipartFile image
     ) {

@@ -4,7 +4,9 @@ import com.anish.e_commerce.model.Product.ProductCategory;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -32,4 +34,8 @@ public class ProductDTO {
     private int quantity;
 
     private String imageUrl;
+
+    // Extra gallery images; null leaves the current gallery untouched on update.
+    @Size(max = 6, message = "At most 6 extra images")
+    private List<String> images;
 }
