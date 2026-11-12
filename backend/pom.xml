@@ -117,7 +117,7 @@
 			<version>2.6.0</version>
 		</dependency>
 
-		<!--Redis-->
+		<!--Cache abstraction (backed by Caffeine below)-->
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-cache</artifactId>
