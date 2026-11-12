@@ -30,9 +30,10 @@
 		<url />
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<lombok.version>1.18.48</lombok.version>
 		<jjwt.version>0.13.0</jjwt.version>
+		<caffeine.version>3.3.1</caffeine.version>
 	</properties>
 	<dependencies>
 	<!-- spring-boot-starter -->
@@ -156,7 +157,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
+				<version>3.16.0</version>
 				<configuration>
 					<annotationProcessorPaths>
 						<path>
