@@ -65,6 +65,8 @@ export default function AdminDashboard() {
                 <ExportButtons />
             </PageHeader>
 
+            {/* The tabs inside take focus (roving tabindex); the tablist itself should not. */}
+            {/* oxlint-disable-next-line jsx-a11y/interactive-supports-focus */}
             <div
                 role="tablist"
                 aria-label="Dashboard sections"

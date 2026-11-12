@@ -44,7 +44,7 @@ export default function Cart({ closeCart }: CartProps) {
 
     const updateQuantity = async (productId: number, delta: number) => {
         if (!username) return;
-        const item = cartItems.find((item) => item.id === productId);
+        const item = cartItems.find((i) => i.id === productId);
         if (!item) return;
 
         const newQty = item.quantity + delta;

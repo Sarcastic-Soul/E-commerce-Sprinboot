@@ -58,12 +58,15 @@
             }
         ],
         "jsx-a11y/prefer-tag-over-role": "off",
-        "jsx-a11y/label-has-associated-control": "warn",
-        "jsx-a11y/no-noninteractive-element-interactions": "warn",
-        "jsx-a11y/no-static-element-interactions": "warn",
-        "jsx-a11y/click-events-have-key-events": "warn",
-        "jsx-a11y/interactive-supports-focus": "warn",
-        "typescript/no-unnecessary-type-conversion": "off"
+        "typescript/no-unnecessary-type-conversion": "off",
+        "import/no-unassigned-import": [
+            "warn",
+            {
+                "allow": [
+                    "**/*.css"
+                ]
+            }
+        ]
     },
     "overrides": [
         {

@@ -120,9 +120,9 @@ export default function UpdateProduct() {
             void queryClient.invalidateQueries({ queryKey: ["admin"] });
             toast.success('Product updated!');
             void navigate(`/product/${id}`);
-        } catch (error) {
-            console.error('Error updating:', error);
-            const status = isAxiosError(error) ? error.response?.status : undefined;
+        } catch (err) {
+            console.error('Error updating:', err);
+            const status = isAxiosError(err) ? err.response?.status : undefined;
 
             if (status === 403) toast.error('Not authorized.');
             else if (status === 404) toast.error('Product not found.');
@@ -156,8 +156,9 @@ export default function UpdateProduct() {
                 )}
 
                 <div>
-                    <label className="block font-semibold mb-2">Update Image (optional)</label>
+                    <label htmlFor="product-image" className="block font-semibold mb-2">Update Image (optional)</label>
                     <input
+                        id="product-image"
                         type="file"
                         onChange={handleImageChange}
                         accept="image/*"
@@ -166,8 +167,9 @@ export default function UpdateProduct() {
                 </div>
 
                 <div>
-                    <label className="block font-semibold mb-2">Product Name</label>
+                    <label htmlFor="product-name" className="block font-semibold mb-2">Product Name</label>
                     <input
+                        id="product-name"
                         type="text"
                         name="name"
                         value={product.name}
@@ -178,8 +180,9 @@ export default function UpdateProduct() {
                 </div>
 
                 <div>
-                    <label className="block font-semibold mb-2">Description</label>
+                    <label htmlFor="product-description" className="block font-semibold mb-2">Description</label>
                     <textarea
+                        id="product-description"
                         name="description"
                         value={product.description}
                         onChange={handleChange}
@@ -189,8 +192,9 @@ export default function UpdateProduct() {
                 </div>
 
                 <div>
-                    <label className="block font-semibold mb-2">Brand</label>
+                    <label htmlFor="product-brand" className="block font-semibold mb-2">Brand</label>
                     <input
+                        id="product-brand"
                         type="text"
                         name="brand"
                         value={product.brand}
@@ -201,8 +205,9 @@ export default function UpdateProduct() {
                 </div>
 
                 <div>
-                    <label className="block font-semibold mb-2">Price</label>
+                    <label htmlFor="product-price" className="block font-semibold mb-2">Price</label>
                     <input
+                        id="product-price"
                         type="number"
                         name="price"
                         value={product.price}
@@ -213,8 +218,9 @@ export default function UpdateProduct() {
                 </div>
 
                 <div>
-                    <label className="block font-semibold mb-2">Category</label>
+                    <label htmlFor="product-category" className="block font-semibold mb-2">Category</label>
                     <select
+                        id="product-category"
                         name="category"
                         value={product.category}
                         onChange={handleChange}
@@ -231,9 +237,10 @@ export default function UpdateProduct() {
                 </div>
 
                 <div>
-                    <label className="block font-semibold mb-2">Available</label>
+                    <label htmlFor="product-available" className="block font-semibold mb-2">Available</label>
                     <div className="flex items-center space-x-2">
                         <input
+                            id="product-available"
                             type="checkbox"
                             name="available"
                             checked={product.available}
@@ -246,8 +253,9 @@ export default function UpdateProduct() {
 
                 {product.available && (
                     <div>
-                        <label className="block font-semibold mb-2">Quantity</label>
+                        <label htmlFor="product-quantity" className="block font-semibold mb-2">Quantity</label>
                         <input
+                            id="product-quantity"
                             type="number"
                             name="quantity"
                             value={product.quantity}

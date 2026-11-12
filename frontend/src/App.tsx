@@ -315,8 +315,12 @@ function InnerApp() {
 
             {showCart && (
                 <div className="fixed inset-0 z-50">
-                    <div
-                        className="fixed inset-0 backdrop-blur-sm"
+                    {/* Click-outside backdrop. Keyboard users close the cart with Escape or its close button. */}
+                    <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label="Close cart"
+                        className="fixed inset-0 w-full backdrop-blur-sm cursor-default"
                         onClick={() => setShowCart(false)}
                     />
                     <Cart closeCart={() => setShowCart(false)} />

@@ -47,6 +47,8 @@ export default function ReviewForm({ initial, onSubmit, onCancel }: ReviewFormPr
                     onMouseLeave={() => setHover(0)}
                 >
                     {[1, 2, 3, 4, 5].map((n) => (
+                        // Hover only previews the stars; keyboard users pick with the arrow keys.
+                        // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
                         <label
                             key={n}
                             onMouseEnter={() => setHover(n)}

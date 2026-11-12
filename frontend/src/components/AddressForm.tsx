@@ -1,17 +1,19 @@
-import { useId, useState, type ChangeEvent, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import type { AddressRequest } from "../api/types";
 import { useTheme } from "../context/ThemeContext";
 import { btn, inputCls, labelCls } from "../utils/ui";
 
-type AddressField =
-    | "fullName"
-    | "phone"
-    | "line1"
-    | "line2"
-    | "city"
-    | "state"
-    | "postalCode"
-    | "country";
+const ADDRESS_FIELDS = [
+    "fullName",
+    "phone",
+    "line1",
+    "line2",
+    "city",
+    "state",
+    "postalCode",
+    "country",
+] as const;
+type AddressField = (typeof ADDRESS_FIELDS)[number];
 
 type AddressValues = Record<AddressField, string>;
 type AddressErrors = Partial<Record<AddressField, string>>;
@@ -85,7 +87,7 @@ export default function AddressForm({
     const [values, setValues] = useState<AddressValues>(() => {
         const start = { ...EMPTY };
         if (initial) {
-            for (const key of Object.keys(EMPTY) as AddressField[]) start[key] = initial[key] ?? "";
+            for (const key of ADDRESS_FIELDS) start[key] = initial[key] ?? "";
             if (!start.country) start.country = "India";
         }
         return start;
@@ -93,10 +95,7 @@ export default function AddressForm({
     const [errors, setErrors] = useState<AddressErrors>({});
     const [saving, setSaving] = useState(false);
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { value } = e.target;
-        // Inputs are only rendered from FIELDS, so name is always an AddressField.
-        const name = e.target.name as AddressField;
+    const handleChange = (name: AddressField, value: string) => {
         setValues((v) => ({ ...v, [name]: value }));
         if (errors[name]) setErrors((er) => ({ ...er, [name]: undefined }));
     };
@@ -144,7 +143,7 @@ export default function AddressForm({
                                 type={f.type || "text"}
                                 autoComplete={f.autoComplete}
                                 value={values[f.name]}
-                                onChange={handleChange}
+                                onChange={(e) => handleChange(f.name, e.target.value)}
                                 aria-invalid={Boolean(errors[f.name])}
                                 aria-describedby={errors[f.name] ? errId : undefined}
                                 className={inputCls(darkMode)}

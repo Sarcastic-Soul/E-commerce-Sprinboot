@@ -147,10 +147,11 @@ export default function AddProduct() {
                 </h1>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-name" className="block text-black font-semibold mb-2">
                         Product Name
                     </label>
                     <input
+                        id="product-name"
                         type="text"
                         name="name"
                         value={product.name}
@@ -161,10 +162,11 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-description" className="block text-black font-semibold mb-2">
                         Description
                     </label>
                     <textarea
+                        id="product-description"
                         name="description"
                         value={product.description}
                         onChange={handleChange}
@@ -174,10 +176,11 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-brand" className="block text-black font-semibold mb-2">
                         Brand
                     </label>
                     <input
+                        id="product-brand"
                         type="text"
                         name="brand"
                         value={product.brand}
@@ -188,10 +191,11 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-price" className="block text-black font-semibold mb-2">
                         Price
                     </label>
                     <input
+                        id="product-price"
                         type="number"
                         name="price"
                         value={product.price}
@@ -202,10 +206,11 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-category" className="block text-black font-semibold mb-2">
                         Category
                     </label>
                     <select
+                        id="product-category"
                         name="category"
                         value={product.category}
                         onChange={handleChange}
@@ -222,11 +227,12 @@ export default function AddProduct() {
                 </div>
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-available" className="block text-black font-semibold mb-2">
                         Available
                     </label>
                     <div className="flex items-center space-x-2">
                         <input
+                            id="product-available"
                             type="checkbox"
                             name="available"
                             checked={product.available}
@@ -239,10 +245,11 @@ export default function AddProduct() {
 
                 {product.available && (
                     <div>
-                        <label className="block text-black font-semibold mb-2">
+                        <label htmlFor="product-quantity" className="block text-black font-semibold mb-2">
                             Quantity
                         </label>
                         <input
+                            id="product-quantity"
                             type="number"
                             name="quantity"
                             value={product.quantity}
@@ -255,10 +262,11 @@ export default function AddProduct() {
                 )}
 
                 <div>
-                    <label className="block text-black font-semibold mb-2">
+                    <label htmlFor="product-image" className="block text-black font-semibold mb-2">
                         Upload Image
                     </label>
                     <input
+                        id="product-image"
                         type="file"
                         onChange={handleImageChange}
                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-2 file:border-black file:text-sm file:font-semibold file:bg-[#d6d6d6] hover:file:bg-gray-200"

@@ -52,8 +52,10 @@ export default function ProductGallery({ name, imageUrl, images = [] }: ProductG
             </div>
 
             {all.length > 1 && (
+                // The thumbnails take focus (roving tabindex); the toolbar itself should not.
+                // oxlint-disable-next-line jsx-a11y/interactive-supports-focus
                 <div
-                    role="group"
+                    role="toolbar"
                     aria-label={`${name} images. Use the arrow keys to switch.`}
                     onKeyDown={onKeyDown}
                     className="flex gap-3 overflow-x-auto p-1 -m-1"

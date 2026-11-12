@@ -1,9 +1,9 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { create, type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 /** Marks a request that already went through one refresh-and-retry. */
-type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type RetriableConfig = InternalAxiosRequestConfig & { retried?: boolean };
 
-const api = axios.create({
+const api = create({
     baseURL: "/api",
     withCredentials: true,
     // Access/refresh tokens now live in httpOnly cookies (never JS-readable), so
@@ -40,10 +40,10 @@ api.interceptors.response.use(
         if (
             originalRequest &&
             error.response?.status === 401 &&
-            !originalRequest._retry &&
+            !originalRequest.retried &&
             !AUTH_ENDPOINTS.includes(originalRequest.url ?? "")
         ) {
-            originalRequest._retry = true;
+            originalRequest.retried = true;
 
             try {
                 // The refresh token travels as an httpOnly cookie; withCredentials

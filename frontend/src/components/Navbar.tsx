@@ -310,10 +310,10 @@ export function Navbar({
 
                         {/* Price Range */}
                         <div className="flex flex-col w-full sm:w-56">
-                            <label className="block font-black text-sm mb-2 text-center">
+                            <span id="price-range-label" className="block font-black text-sm mb-2 text-center">
                                 PRICE RANGE
-                            </label>
-                            <div className="flex gap-2">
+                            </span>
+                            <div role="group" aria-labelledby="price-range-label" className="flex gap-2">
                                 <input
                                     type="number"
                                     min="0"

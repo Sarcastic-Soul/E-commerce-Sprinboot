@@ -20,7 +20,7 @@ export default function LowStockList() {
     // Wait for typing to pause before hitting the API.
     useEffect(() => {
         const n = Number.parseInt(input, 10);
-        if (Number.isNaN(n) || n < 0) return;
+        if (Number.isNaN(n) || n < 0) return undefined;
         const t = setTimeout(() => setThreshold(n), 400);
         return () => clearTimeout(t);
     }, [input]);

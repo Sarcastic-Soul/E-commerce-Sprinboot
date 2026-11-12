@@ -45,11 +45,11 @@ export function loadRazorpayScript(): Promise<boolean> {
     scriptPromise = new Promise<boolean>((resolve) => {
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => resolve(true);
-        script.onerror = () => {
+        script.addEventListener("load", () => resolve(true));
+        script.addEventListener("error", () => {
             scriptPromise = null;
             resolve(false);
-        };
+        });
         document.body.appendChild(script);
     });
     return scriptPromise;

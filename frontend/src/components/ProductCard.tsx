@@ -78,7 +78,7 @@ export default function ProductCard({
         }
     };
 
-    const handleAddToCart = async (product: Product) => {
+    const handleAddToCart = async (target: Product) => {
         if (adding) return;
         try {
             if (!user?.username) {
@@ -93,7 +93,7 @@ export default function ProductCard({
                 null,
                 {
                     params: {
-                        productId: product.id,
+                        productId: target.id,
                         quantity: 1,
                     },
                 },
@@ -106,7 +106,6 @@ export default function ProductCard({
             );
             setCartItemCount(totalCount);
             toast.success("Item added to cart!");
-            return updatedCart;
         } catch (error) {
             console.error("Failed to add to cart:", error);
             toast.error("Failed to add to cart.");
