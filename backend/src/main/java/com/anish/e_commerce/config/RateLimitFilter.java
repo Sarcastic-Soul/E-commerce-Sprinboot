@@ -3,6 +3,11 @@ package com.anish.e_commerce.config;
 import tools.jackson.databind.ObjectMapper;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
+import io.github.bucket4j.distributed.jdbc.PrimaryKeyMapper;
+import io.github.bucket4j.postgresql.Bucket4jPostgreSQL;
+import io.github.bucket4j.postgresql.PostgreSQLSelectForUpdateBasedProxyManager;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,11 +19,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.sql.DataSource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
+@Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
     /**
@@ -48,12 +60,111 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int AUTH_LIMIT = 10;
     private static final int CATALOG_LIMIT = 120;
 
-    private Bucket createNewBucket(int capacity) {
-        Bandwidth limit = Bandwidth.builder()
+    /**
+     * Where the login/signup buckets live: "memory" (this JVM) or "postgres".
+     * Memory is fine for one long-running server. On serverless, instances come and
+     * go and several can run at once, each with its own counters, so a brute-force
+     * run could spread across them; "postgres" shares one count. Catalog buckets stay
+     * in memory everywhere: that limit only stops spam, so being per instance is
+     * fine, and it avoids a database write on every product request.
+     */
+    private final String authStore;
+
+    /**
+     * Header holding the real client IP, set by the platform's edge (Vercel sets
+     * x-real-ip and overwrites any client-supplied value). Blank means fall back to
+     * the last X-Forwarded-For hop.
+     */
+    private final String clientIpHeader;
+
+    // Lazy: @WebMvcTest slices build this filter without a DataSource.
+    private final ObjectProvider<DataSource> dataSource;
+    private volatile PostgreSQLSelectForUpdateBasedProxyManager<String> sharedBuckets;
+
+    static final String BUCKET_TABLE = "rate_limit_bucket";
+
+    public RateLimitFilter(
+        @Value("${app.rate-limit.auth-store:memory}") String authStore,
+        @Value("${app.client-ip-header:}") String clientIpHeader,
+        ObjectProvider<DataSource> dataSource
+    ) {
+        this.authStore = authStore;
+        this.clientIpHeader = clientIpHeader;
+        this.dataSource = dataSource;
+    }
+
+    private static Bandwidth limitFor(int capacity) {
+        return Bandwidth.builder()
             .capacity(capacity)
             .refillGreedy(capacity, Duration.ofMinutes(1))
             .build();
-        return Bucket.builder().addLimit(limit).build();
+    }
+
+    /**
+     * Built on first use so neither the table check nor the pool is touched at boot.
+     * The table is not a JPA entity (Bucket4j owns its format), so it is created here.
+     */
+    private PostgreSQLSelectForUpdateBasedProxyManager<String> sharedBuckets() {
+        PostgreSQLSelectForUpdateBasedProxyManager<String> manager = sharedBuckets;
+        if (manager == null) {
+            synchronized (this) {
+                if (sharedBuckets == null) {
+                    DataSource ds = dataSource.getObject();
+                    new JdbcTemplate(ds).execute(
+                        "CREATE TABLE IF NOT EXISTS " + BUCKET_TABLE +
+                            " (id VARCHAR(128) PRIMARY KEY, state BYTEA, expires_at BIGINT)"
+                    );
+                    sharedBuckets = Bucket4jPostgreSQL.selectForUpdateBasedBuilder(ds)
+                        .primaryKeyMapper(PrimaryKeyMapper.STRING)
+                        .table(BUCKET_TABLE)
+                        // Rows count as expired once the bucket would be full again.
+                        .expirationAfterWrite(
+                            ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
+                                Duration.ofMinutes(1)
+                            )
+                        )
+                        .build();
+                }
+                manager = sharedBuckets;
+            }
+        }
+        return manager;
+    }
+
+    /** Returns true when the request may go ahead. */
+    private boolean tryConsume(String scope, String key, int capacity) {
+        if ("auth".equals(scope) && "postgres".equalsIgnoreCase(authStore)) {
+            try {
+                return sharedBuckets()
+                    .getProxy(key, () -> BucketConfiguration.builder().addLimit(limitFor(capacity)).build())
+                    .tryConsume(1);
+            } catch (RuntimeException e) {
+                // A rate limiter must not take login down with it: if the database
+                // hiccups, let the request through (login itself will then fail or
+                // succeed on its own) and say so in the logs.
+                log.warn("Shared rate limit check skipped: {}", e.getMessage());
+                return true;
+            }
+        }
+        return cache
+            .computeIfAbsent(key, k -> Bucket.builder().addLimit(limitFor(capacity)).build())
+            .tryConsume(1);
+    }
+
+    /**
+     * Deletes expired bucket rows. Called hourly on a long-running server and by the
+     * daily cron endpoint on serverless; returns how many rows were removed.
+     */
+    @Scheduled(fixedDelayString = "PT1H", initialDelayString = "PT10M")
+    public int removeExpiredBuckets() {
+        if (!"postgres".equalsIgnoreCase(authStore)) return 0;
+        int total = 0;
+        int removed;
+        do {
+            removed = sharedBuckets().removeExpired(500);
+            total += removed;
+        } while (removed == 500);
+        return total;
     }
 
     /**
@@ -63,6 +174,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
      * per request and bypass the limit entirely.
      */
     private String resolveClientIp(HttpServletRequest request) {
+        if (!clientIpHeader.isBlank()) {
+            String fromEdge = request.getHeader(clientIpHeader);
+            if (fromEdge != null && !fromEdge.isBlank()) {
+                return fromEdge.trim();
+            }
+        }
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
             String[] hops = forwardedFor.split(",");
@@ -102,11 +219,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (capacity != null) {
             // Scope is part of the key so the two budgets stay separate per client.
             String key = scope + ":" + resolveClientIp(request);
-            final int cap = capacity;
-
-            Bucket bucket = cache.computeIfAbsent(key, k -> createNewBucket(cap));
-
-            if (!bucket.tryConsume(1)) {
+            if (!tryConsume(scope, key, capacity)) {
                 // 1. Set Status and Content Type
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                 response.setContentType("application/json");

@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+# Backend-only image for Vercel's Container runtime. The frontend is a separate
+# static service in the same Vercel project (see /vercel.json), so unlike the root
+# Dockerfile this one does not bundle the React build. The build context is
+# backend/, the service root.
+
+FROM maven:3.9-eclipse-temurin-25 AS build
+WORKDIR /app
+
+COPY pom.xml ./
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
+
+COPY src ./src
+# An extracted jar starts faster than a fat jar and is what the AOT cache needs.
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests \
+    && cp target/*.jar app.jar \
+    && java -Djarmode=tools -jar app.jar extract --destination /app/extracted
+
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+COPY --from=build /app/extracted ./
+
+# Training run, same as the root Dockerfile: start the context once and record the
+# loaded classes into app.aot, so real starts skip most class loading. No database
+# exists at build time, so Hibernate is told not to connect. GC and the C1-only
+# flag must match the ENTRYPOINT, or the JVM ignores the cache.
+RUN java -XX:AOTCacheOutput=app.aot -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xmx384m \
+    -Dspring.context.exit=onRefresh \
+    -Dspring.jpa.hibernate.ddl-auto=none \
+    -Dspring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access=false \
+    -Dspring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect \
+    -DDB_URL=jdbc:postgresql://localhost:5432/training -DDB_USER=x -DDB_PASS=x \
+    -DRAZORPAY_KEY_ID=x -DRAZORPAY_KEY_SECRET=x \
+    -jar app.jar
+
+# Vercel gives each instance 1 vCPU and 2GB. TieredStopAtLevel=1 skips the C2
+# compiler, which on one core competes with startup and roughly doubles boot time;
+# the app waits on Postgres far more than it computes. The heap is capped
+# well below 2GB so metaspace, threads and the cache's mapped files fit beside it.
+# server.port comes from $PORT (application.properties), which Vercel sets.
+ENTRYPOINT ["java", "-XX:AOTCache=app.aot", "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1", "-XX:InitialRAMPercentage=25", "-XX:MaxRAMPercentage=50", "-jar", "app.jar"]

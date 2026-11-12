@@ -1,10 +1,13 @@
 package com.anish.e_commerce.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.anish.e_commerce.model.RefreshToken;
 import com.anish.e_commerce.repo.RefreshTokenRepo;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,37 +28,33 @@ class RefreshTokenServiceTest {
 
     @BeforeEach
     void setUp() {
-        refreshTokenService = new RefreshTokenService(
-            refreshTokenRepo,
-            DURATION_MS
-        );
+        refreshTokenService = new RefreshTokenService(refreshTokenRepo, DURATION_MS);
+    }
+
+    private static RefreshToken token(String value, Instant expiresAt) {
+        return RefreshToken.builder().token(value).userId(3L).expiresAt(expiresAt).build();
     }
 
     @Test
-    void createRefreshToken_SavesTokenWithExpirationInSecondsNotMillis() {
-        when(refreshTokenRepo.save(any(RefreshToken.class))).thenAnswer(
-            i -> i.getArgument(0)
-        );
+    void createRefreshToken_SavesTokenExpiringAfterConfiguredDuration() {
+        when(refreshTokenRepo.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
+        Instant before = Instant.now();
 
         RefreshToken token = refreshTokenService.createRefreshToken(7L);
 
         assertNotNull(token.getToken());
         assertEquals(7L, token.getUserId());
-        // Redis' @TimeToLive is read in seconds; the configured duration is in ms.
-        assertEquals(DURATION_MS / 1000, token.getExpiration());
+        Instant expected = before.plusMillis(DURATION_MS);
+        assertTrue(Duration.between(expected, token.getExpiresAt()).abs().toSeconds() < 5);
 
-        ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(
-            RefreshToken.class
-        );
+        ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
         verify(refreshTokenRepo, times(1)).save(captor.capture());
         assertEquals(token.getToken(), captor.getValue().getToken());
     }
 
     @Test
     void createRefreshToken_GeneratesDistinctTokensPerCall() {
-        when(refreshTokenRepo.save(any(RefreshToken.class))).thenAnswer(
-            i -> i.getArgument(0)
-        );
+        when(refreshTokenRepo.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
 
         RefreshToken first = refreshTokenService.createRefreshToken(1L);
         RefreshToken second = refreshTokenService.createRefreshToken(1L);
@@ -65,13 +64,8 @@ class RefreshTokenServiceTest {
 
     @Test
     void findByToken_DelegatesToRepo() {
-        RefreshToken stored = RefreshToken.builder()
-            .token("abc")
-            .userId(3L)
-            .expiration(60L)
-            .build();
-        when(refreshTokenRepo.findByToken("abc")).thenReturn(
-            Optional.of(stored)
+        when(refreshTokenRepo.findById("abc")).thenReturn(
+            Optional.of(token("abc", Instant.now().plusSeconds(60)))
         );
 
         Optional<RefreshToken> result = refreshTokenService.findByToken("abc");
@@ -81,22 +75,28 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void findByToken_ReturnsEmptyWhenExpiredOrMissing() {
-        // Redis evicts on @TimeToLive, so an expired/missing token is simply absent.
-        when(refreshTokenRepo.findByToken("gone")).thenReturn(Optional.empty());
+    void findByToken_ReturnsEmptyWhenMissing() {
+        when(refreshTokenRepo.findById("gone")).thenReturn(Optional.empty());
 
         assertTrue(refreshTokenService.findByToken("gone").isEmpty());
     }
 
     @Test
-    void verifyExpiration_ReturnsTokenUnchanged() {
-        RefreshToken token = RefreshToken.builder()
-            .token("abc")
-            .userId(3L)
-            .expiration(60L)
-            .build();
+    void verifyExpiration_ReturnsValidTokenUnchanged() {
+        RefreshToken valid = token("abc", Instant.now().plusSeconds(60));
 
-        assertSame(token, refreshTokenService.verifyExpiration(token));
+        assertSame(valid, refreshTokenService.verifyExpiration(valid));
+        verify(refreshTokenRepo, never()).delete(any());
+    }
+
+    @Test
+    void verifyExpiration_DeletesExpiredTokenAndReturnsNull() {
+        RefreshToken expired = token("old", Instant.now().minusSeconds(1));
+
+        assertNull(refreshTokenService.verifyExpiration(expired));
+        verify(refreshTokenRepo).delete(expired);
+        // Through Optional.map, as AuthController uses it, an expired token is empty.
+        assertTrue(Optional.of(expired).map(refreshTokenService::verifyExpiration).isEmpty());
     }
 
     @Test
@@ -107,12 +107,13 @@ class RefreshTokenServiceTest {
 
     @Test
     void deleteByUserId_DeletesEveryTokenOfThatUser() {
-        RefreshToken a = RefreshToken.builder().token("a").userId(5L).build();
-        RefreshToken b = RefreshToken.builder().token("b").userId(5L).build();
-        when(refreshTokenRepo.findByUserId(5L)).thenReturn(java.util.List.of(a, b));
-
         refreshTokenService.deleteByUserId(5L);
+        verify(refreshTokenRepo, times(1)).deleteByUserId(5L);
+    }
 
-        verify(refreshTokenRepo, times(1)).deleteAll(java.util.List.of(a, b));
+    @Test
+    void deleteExpired_DelegatesWithCurrentTime() {
+        when(refreshTokenRepo.deleteExpired(any())).thenReturn(4);
+        assertEquals(4, refreshTokenService.deleteExpired());
     }
 }

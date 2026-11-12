@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { HeartIcon as Heart, ArrowLeftIcon as ArrowLeft } from "@phosphor-icons/react";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";

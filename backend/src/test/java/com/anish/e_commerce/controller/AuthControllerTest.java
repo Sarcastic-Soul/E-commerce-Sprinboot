@@ -148,7 +148,7 @@ class AuthControllerTest {
             RefreshToken.builder()
                 .token("refresh-token-value")
                 .userId(1L)
-                .expiration(604800L)
+                .expiresAt(java.time.Instant.now().plusSeconds(604800))
                 .build()
         );
 
@@ -202,7 +202,7 @@ class AuthControllerTest {
                 RefreshToken.builder()
                     .token("refresh-token-value")
                     .userId(1L)
-                    .expiration(604800L)
+                    .expiresAt(java.time.Instant.now().plusSeconds(604800))
                     .build()
             )
         );

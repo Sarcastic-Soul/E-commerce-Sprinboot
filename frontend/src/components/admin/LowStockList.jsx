@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useId, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { CheckCircleIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import api from "../../api/axios";
 import { useTheme } from "../../context/ThemeContext";
@@ -14,9 +15,6 @@ export default function LowStockList() {
     const inputId = useId();
     const [input, setInput] = useState("5");
     const [threshold, setThreshold] = useState(5);
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     // Wait for typing to pause before hitting the API.
     useEffect(() => {
@@ -26,24 +24,19 @@ export default function LowStockList() {
         return () => clearTimeout(t);
     }, [input]);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await api.get("/admin/products/low-stock", {
-                params: { threshold },
-            });
-            setProducts(data || []);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load low stock products."));
-        } finally {
-            setLoading(false);
-        }
-    }, [threshold]);
-
-    useEffect(() => {
-        load();
-    }, [load]);
+    const {
+        data,
+        isPending: loading,
+        error: queryError,
+        refetch,
+    } = useQuery({
+        queryKey: ["admin", "low-stock", threshold],
+        queryFn: async () =>
+            (await api.get("/admin/products/low-stock", { params: { threshold } })).data || [],
+        placeholderData: keepPreviousData,
+    });
+    const products = data ?? [];
+    const error = queryError ? errorMessage(queryError, "Could not load low stock products.") : null;
 
     return (
         <section className={`${panel(darkMode)} p-5 sm:p-6`} aria-labelledby="lowstock-h">
@@ -70,7 +63,7 @@ export default function LowStockList() {
             {loading ? (
                 <LoadingState variant="list" />
             ) : error ? (
-                <ErrorState error={error} onRetry={load} />
+                <ErrorState error={error} onRetry={() => refetch()} />
             ) : products.length === 0 ? (
                 <div className="py-10 text-center">
                     <CheckCircleIcon size={48} className="mx-auto mb-2 text-green-500" />

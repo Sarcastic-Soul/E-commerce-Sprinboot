@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { CaretRightIcon, ReceiptIcon } from "@phosphor-icons/react";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
@@ -12,27 +12,17 @@ import { errorMessage, formatDate, formatMoney } from "../utils/format.js";
 import { btn, focusRing, panel } from "../utils/ui.js";
 
 export default function OrderHistoryPage() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const { darkMode } = useTheme();
-
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await api.get("/orders/history");
-            setOrders(res.data || []);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load your orders."));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        load();
-    }, [load]);
+    const {
+        data: orders = [],
+        isPending: loading,
+        error: queryError,
+        refetch: load,
+    } = useQuery({
+        queryKey: ["orders", "history"],
+        queryFn: async () => (await api.get("/orders/history")).data || [],
+    });
+    const error = queryError ? errorMessage(queryError, "Could not load your orders.") : null;
 
     return (
         <div className="max-w-4xl mx-auto mt-8 pb-12">

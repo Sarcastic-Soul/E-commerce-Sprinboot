@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "../api/axios";
+import { queryClient } from "../api/queryClient";
 
 const AuthContext = createContext();
 
@@ -37,6 +38,8 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         try {
             const res = await axios.post("/auth/login", { username, password });
+            // Drop anything cached for a guest or a previous account.
+            queryClient.clear();
             setUser(toUser(res.data));
         } catch (err) {
             throw new Error("Login failed", { cause: err });
@@ -63,6 +66,8 @@ export const AuthProvider = ({ children }) => {
             // already re-renders every consumer, and a reload re-downloaded the
             // whole bundle. Callers navigate afterwards (AuthProvider sits outside
             // <Router>, so useNavigate is not available in this file).
+            // Cached orders, addresses and admin data belong to the old session.
+            queryClient.clear();
             setUser(null);
         }
     };

@@ -1,0 +1,6 @@
+target
+.idea
+.vscode
+*.iml
+secrets.properties
+**/application-prod.properties

@@ -3,7 +3,7 @@ import {
     PlusIcon as Plus,
     MinusIcon as Minus,
 } from "@phosphor-icons/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
@@ -91,7 +91,6 @@ export default function Cart({ closeCart }) {
 
         // Stop the page behind the overlay from scrolling.
         const previousOverflow = document.body.style.overflow;
-        // eslint-disable-next-line react-hooks/immutability -- intentional DOM side effect, undone in cleanup
         document.body.style.overflow = "hidden";
 
         const handleClickOutside = (e) => {

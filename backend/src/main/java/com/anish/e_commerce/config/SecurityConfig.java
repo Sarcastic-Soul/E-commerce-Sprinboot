@@ -82,6 +82,9 @@ public class SecurityConfig {
                     // 1. Public API Endpoints
                     .requestMatchers("/api/auth/**")
                     .permitAll()
+                    // Scheduler hooks check their own shared secret (InternalController).
+                    .requestMatchers(HttpMethod.GET, "/api/internal/**")
+                    .permitAll()
                     // Catalog reads are public, writes are not. GET only: product
                     // add/update/delete and review writes live under the same paths,
                     // and a method-less permitAll here let anonymous callers reach them.

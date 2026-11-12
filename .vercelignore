@@ -1,0 +1,11 @@
+# Never upload local secrets or build output to Vercel.
+**/secrets.properties
+**/application-prod.properties
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/target
+.idea
+.vscode
+Screenshot.png

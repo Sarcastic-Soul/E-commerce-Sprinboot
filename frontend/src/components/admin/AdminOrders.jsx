@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { useId, useState } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import api from "../../api/axios";
 import { useTheme } from "../../context/ThemeContext";
@@ -12,39 +13,45 @@ import { errorMessage, formatDateTime, formatMoney } from "../../utils/format.js
 import { btn, focusRing, inputCls, labelCls, panel } from "../../utils/ui.js";
 
 const PAGE_SIZE = 20;
+const EMPTY = { content: [], totalPages: 0, totalElements: 0 };
 
 export default function AdminOrders() {
     const { darkMode } = useTheme();
+    const queryClient = useQueryClient();
     const filterId = useId();
     const [status, setStatus] = useState("");
     const [page, setPage] = useState(0);
-    const [data, setData] = useState({ content: [], totalPages: 0, totalElements: 0 });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [busyId, setBusyId] = useState(null);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
+    const {
+        data: result,
+        isPending: loading,
+        error: queryError,
+        refetch,
+    } = useQuery({
+        queryKey: ["admin", "orders", page, status],
+        queryFn: async () => {
             const params = { page, size: PAGE_SIZE };
             if (status) params.status = status;
             const res = await api.get("/admin/orders", { params });
-            setData({
+            return {
                 content: res.data.content || [],
                 totalPages: res.data.page?.totalPages || 0,
                 totalElements: res.data.page?.totalElements || 0,
-            });
-        } catch (err) {
-            setError(errorMessage(err, "Could not load orders."));
-        } finally {
-            setLoading(false);
-        }
-    }, [page, status]);
+            };
+        },
+        placeholderData: keepPreviousData,
+    });
+    const data = result ?? EMPTY;
+    const error = queryError ? errorMessage(queryError, "Could not load orders.") : null;
 
-    useEffect(() => {
-        load();
-    }, [load]);
+    const updateStatus = useMutation({
+        mutationFn: ({ order, to }) => api.put(`/admin/orders/${order.id}/status`, { status: to }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin"] });
+            queryClient.invalidateQueries({ queryKey: ["orders"] });
+        },
+    });
 
     const changeStatus = async (order, to) => {
         if (
@@ -54,11 +61,7 @@ export default function AdminOrders() {
             return;
         setBusyId(order.id);
         try {
-            const res = await api.put(`/admin/orders/${order.id}/status`, { status: to });
-            setData((d) => ({
-                ...d,
-                content: d.content.map((o) => (o.id === order.id ? res.data : o)),
-            }));
+            await updateStatus.mutateAsync({ order, to });
             toast.success(`Order #${order.id} is now ${STATUS_LABELS[to].toLowerCase()}`);
         } catch (err) {
             toast.error(errorMessage(err, "Could not change the status"));
@@ -102,7 +105,7 @@ export default function AdminOrders() {
             {loading ? (
                 <LoadingState variant="list" />
             ) : error ? (
-                <ErrorState error={error} onRetry={load} />
+                <ErrorState error={error} onRetry={() => refetch()} />
             ) : data.content.length === 0 ? (
                 <p className="py-10 text-center font-black text-lg opacity-70">
                     {status ? `No ${STATUS_LABELS[status].toLowerCase()} orders.` : "No orders yet."}

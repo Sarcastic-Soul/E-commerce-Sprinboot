@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import api from '../api/axios';
+import { queryClient } from '../api/queryClient';
 import { PRODUCT_CATEGORIES } from '../constants/categories.js';
 import GalleryUploader from '../components/GalleryUploader';
 import LoadingState from '../components/LoadingState';
@@ -43,11 +44,11 @@ export default function UpdateProduct() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const maxSize = 5 * 1024 * 1024;
+        const maxSize = 4 * 1024 * 1024;
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
         if (file.size > maxSize) {
-            toast.error(`Image size is ${sizeInMB} MB. Max allowed: 5 MB`);
+            toast.error(`Image size is ${sizeInMB} MB. Max allowed: 4 MB`);
             return;
         }
 
@@ -79,6 +80,8 @@ export default function UpdateProduct() {
             }
 
             await api.put(`/product/${id}`, updatedProduct);
+            queryClient.invalidateQueries({ queryKey: ["products"] });
+            queryClient.invalidateQueries({ queryKey: ["admin"] });
             toast.success('Product updated!');
             navigate(`/product/${id}`);
         } catch (error) {

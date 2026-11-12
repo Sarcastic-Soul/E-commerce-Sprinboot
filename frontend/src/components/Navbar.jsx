@@ -12,7 +12,7 @@ import {
     HeartIcon as Heart,
     UserCircleIcon,
 } from "@phosphor-icons/react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { useState, useEffect, useRef, useCallback } from "react"; // Added useRef
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -114,11 +114,13 @@ export function Navbar({
 
     // The empty-state "Clear filters" button lives in ProductGrid, which cannot reach
     // this component's filter state directly — App bumps a counter and we clear here,
-    // so the inputs and the query never disagree about what is filtered.
-    useEffect(() => {
-        if (resetSignal === 0) return;
+    // so the inputs and the query never disagree about what is filtered. Done during
+    // render (React's "adjust state when a prop changes" pattern), not in an effect.
+    const [seenResetSignal, setSeenResetSignal] = useState(resetSignal);
+    if (resetSignal !== seenResetSignal) {
+        setSeenResetSignal(resetSignal);
         handleResetFilters();
-    }, [resetSignal, handleResetFilters]);
+    }
 
     const handleLogout = async () => {
         await logout();

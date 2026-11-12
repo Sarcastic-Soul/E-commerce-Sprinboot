@@ -2,6 +2,7 @@ package com.anish.e_commerce.controller;
 
 import com.anish.e_commerce.dto.OrderResponse;
 import com.anish.e_commerce.dto.PlaceOrderRequest;
+import com.anish.e_commerce.service.OrderExpiryJob;
 import com.anish.e_commerce.service.OrderService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -16,12 +17,17 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderExpiryJob orderExpiryJob;
 
     @PostMapping("/place")
     public ResponseEntity<OrderResponse> placeOrder(
         @Valid @RequestBody PlaceOrderRequest request,
         Authentication authentication
     ) {
+        // Release stock held by abandoned checkouts first, so it can be bought
+        // again. Done here, outside placeOrder's transaction, so each expiry
+        // commits on its own.
+        orderExpiryJob.sweepIfDue();
         return ResponseEntity.ok(
             orderService.placeOrder(authentication.getName(), request)
         );

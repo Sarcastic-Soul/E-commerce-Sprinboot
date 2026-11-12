@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import {
     PencilSimpleIcon as Edit,
     ShoppingCartIcon as ShoppingCart,
@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import api from "../api/axios";
+import { queryClient } from "../api/queryClient";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "sonner";
@@ -79,6 +80,8 @@ export default function ProductDetail({ product }) {
 
         try {
             await api.delete(`/product/${product.id}`);
+            queryClient.invalidateQueries({ queryKey: ["products"] });
+            queryClient.invalidateQueries({ queryKey: ["admin"] });
             toast.success("Product archived. It is now hidden from the store.");
             navigate("/");
         } catch (error) {

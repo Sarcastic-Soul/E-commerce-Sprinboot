@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PencilSimpleIcon, PlusIcon, ProhibitIcon, TicketIcon } from "@phosphor-icons/react";
 import api from "../../api/axios";
@@ -14,40 +15,48 @@ const describe = (c) =>
 
 export default function AdminCoupons() {
     const { darkMode } = useTheme();
-    const [coupons, setCoupons] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
     const [editing, setEditing] = useState(null); // coupon, "new", or null
     const [busyId, setBusyId] = useState(null);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await api.get("/admin/coupons");
-            setCoupons(data || []);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load coupons."));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const {
+        data,
+        isPending: loading,
+        error: queryError,
+        refetch,
+    } = useQuery({
+        queryKey: ["admin", "coupons"],
+        queryFn: async () => (await api.get("/admin/coupons")).data || [],
+    });
+    const coupons = data ?? [];
+    const error = queryError ? errorMessage(queryError, "Could not load coupons.") : null;
 
-    useEffect(() => {
-        load();
-    }, [load]);
+    const reload = () => queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
+
+    const saveCoupon = useMutation({
+        mutationFn: ({ id, values }) =>
+            id == null ? api.post("/admin/coupons", values) : api.put(`/admin/coupons/${id}`, values),
+        onSuccess: reload,
+    });
+    const deactivateCoupon = useMutation({
+        mutationFn: (id) => api.delete(`/admin/coupons/${id}`),
+        onSuccess: (_res, id) => {
+            queryClient.setQueryData(["admin", "coupons"], (list) =>
+                (list || []).map((x) => (x.id === id ? { ...x, active: false } : x)),
+            );
+        },
+    });
 
     const handleSave = async (values) => {
         try {
             if (editing === "new") {
-                await api.post("/admin/coupons", values);
+                await saveCoupon.mutateAsync({ values });
                 toast.success(`Coupon ${values.code} created`);
             } else {
-                await api.put(`/admin/coupons/${editing.id}`, values);
+                await saveCoupon.mutateAsync({ id: editing.id, values });
                 toast.success(`Coupon ${values.code} saved`);
             }
             setEditing(null);
-            await load();
         } catch (err) {
             toast.error(errorMessage(err, "Could not save the coupon"));
         }
@@ -58,9 +67,8 @@ export default function AdminCoupons() {
             return;
         setBusyId(c.id);
         try {
-            await api.delete(`/admin/coupons/${c.id}`);
+            await deactivateCoupon.mutateAsync(c.id);
             toast.success(`Coupon ${c.code} turned off`);
-            setCoupons((list) => list.map((x) => (x.id === c.id ? { ...x, active: false } : x)));
         } catch (err) {
             toast.error(errorMessage(err, "Could not turn off the coupon"));
         } finally {
@@ -100,7 +108,7 @@ export default function AdminCoupons() {
             {loading ? (
                 <LoadingState variant="list" />
             ) : error ? (
-                <ErrorState error={error} onRetry={load} />
+                <ErrorState error={error} onRetry={() => refetch()} />
             ) : coupons.length === 0 ? (
                 <div className="py-10 text-center">
                     <TicketIcon size={48} className="mx-auto mb-2 opacity-60" />

@@ -24,3 +24,5 @@ frontend/node_modules/
 secrets.properties
 
 backend/src/main/resources/application-prod.properties
+.vercel
+.env*

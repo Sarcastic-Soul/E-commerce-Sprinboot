@@ -29,7 +29,8 @@ export default [
       'react-hooks/set-state-in-effect': 'warn',
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
+        // Context files export their Provider plus its use* hook on purpose.
+        { allowConstantExport: true, allowExportNames: ['useAuth', 'useCart', 'useTheme'] },
       ],
     },
   },

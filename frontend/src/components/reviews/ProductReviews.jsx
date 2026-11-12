@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChatTextIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import api from "../../api/axios";
@@ -12,6 +13,7 @@ import { errorMessage, formatDate } from "../../utils/format.js";
 import { btn, panel } from "../../utils/ui.js";
 
 const PAGE_SIZE = 10;
+const NO_REVIEW = { canReview: false, review: null };
 
 function ReviewItem({ review, mine }) {
     return (
@@ -41,82 +43,73 @@ export default function ProductReviews({ productId, averageRating = 0, reviewCou
     const { user } = useAuth();
     const { darkMode } = useTheme();
 
-    const [reviews, setReviews] = useState([]);
-    const [page, setPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
 
-    const [mine, setMine] = useState({ canReview: false, review: null });
     const [editing, setEditing] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    const fetchPage = useCallback(
-        (p) =>
-            api.get(`/product/${productId}/reviews`, {
-                params: { page: p, size: PAGE_SIZE },
-            }),
-        [productId],
-    );
+    const {
+        data,
+        isPending: loading,
+        error: queryError,
+        refetch,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage: loadingMore,
+    } = useInfiniteQuery({
+        queryKey: ["reviews", productId],
+        queryFn: async ({ pageParam }) =>
+            (
+                await api.get(`/product/${productId}/reviews`, {
+                    params: { page: pageParam, size: PAGE_SIZE },
+                })
+            ).data,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) =>
+            allPages.length < (lastPage.page?.totalPages || 0) ? allPages.length : undefined,
+    });
+    const error = queryError && !data ? errorMessage(queryError, "Could not load reviews.") : null;
 
-    const loadFirst = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await fetchPage(0);
-            setReviews(data.content || []);
-            setTotalPages(data.page?.totalPages || 0);
-            setPage(0);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load reviews."));
-        } finally {
-            setLoading(false);
+    // Flatten the loaded pages and drop repeats (a new review can shift page edges).
+    const reviews = [];
+    const seen = new Set();
+    for (const p of data?.pages ?? []) {
+        for (const r of p.content || []) {
+            if (!seen.has(r.id)) {
+                seen.add(r.id);
+                reviews.push(r);
+            }
         }
-    }, [fetchPage]);
+    }
 
-    const loadMine = useCallback(async () => {
-        if (!user) {
-            setMine({ canReview: false, review: null });
-            return;
-        }
-        try {
-            const { data } = await api.get(`/product/${productId}/reviews/me`);
-            setMine({ canReview: Boolean(data.canReview), review: data.review || null });
-        } catch {
-            setMine({ canReview: false, review: null });
-        }
-    }, [productId, user]);
-
-    useEffect(() => {
-        loadFirst();
-    }, [loadFirst]);
-
-    useEffect(() => {
-        loadMine();
-    }, [loadMine]);
+    const { data: mineData } = useQuery({
+        queryKey: ["reviews", productId, "mine"],
+        queryFn: async () => {
+            try {
+                const { data: d } = await api.get(`/product/${productId}/reviews/me`);
+                return { canReview: Boolean(d.canReview), review: d.review || null };
+            } catch {
+                return NO_REVIEW;
+            }
+        },
+        enabled: Boolean(user),
+    });
+    const mine = user && mineData ? mineData : NO_REVIEW;
 
     const loadMore = async () => {
-        setLoadingMore(true);
         try {
-            const next = page + 1;
-            const { data } = await fetchPage(next);
-            setReviews((list) => {
-                const seen = new Set(list.map((r) => r.id));
-                return [...list, ...(data.content || []).filter((r) => !seen.has(r.id))];
-            });
-            setTotalPages(data.page?.totalPages || 0);
-            setPage(next);
+            await fetchNextPage({ throwOnError: true });
         } catch (err) {
             toast.error(errorMessage(err, "Could not load more reviews"));
-        } finally {
-            setLoadingMore(false);
         }
     };
 
     const refreshAll = async () => {
-        await Promise.all([loadFirst(), loadMine()]);
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["reviews", productId] }),
+            queryClient.invalidateQueries({ queryKey: ["products", productId] }),
+        ]);
         onChanged?.();
     };
 
@@ -232,7 +225,7 @@ export default function ProductReviews({ productId, averageRating = 0, reviewCou
             {loading ? (
                 <LoadingState variant="list" count={3} />
             ) : error ? (
-                <ErrorState error={error} onRetry={loadFirst} />
+                <ErrorState error={error} onRetry={() => refetch()} />
             ) : others.length === 0 && !ownReview ? (
                 <div className="py-8 text-center">
                     <ChatTextIcon size={48} className="mx-auto mb-2 opacity-60" />
@@ -250,7 +243,7 @@ export default function ProductReviews({ productId, averageRating = 0, reviewCou
                             <ReviewItem key={r.id} review={r} />
                         ))}
                     </div>
-                    {page < totalPages - 1 && (
+                    {hasNextPage && (
                         <div className="mt-4 flex justify-center">
                             <button
                                 type="button"

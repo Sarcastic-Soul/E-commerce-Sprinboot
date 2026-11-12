@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { UserCircleIcon } from "@phosphor-icons/react";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
@@ -13,31 +14,20 @@ import { focusRing, panel } from "../utils/ui.js";
 
 export default function AccountPage() {
     const { darkMode } = useTheme();
-    const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await api.get("/user/profile");
-            setProfile(data);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load your profile."));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        load();
-    }, [load]);
+    const {
+        data: profile,
+        isPending: loading,
+        error: queryError,
+        refetch: load,
+    } = useQuery({
+        queryKey: ["profile"],
+        queryFn: async () => (await api.get("/user/profile")).data,
+    });
+    const error = queryError ? errorMessage(queryError, "Could not load your profile.") : null;
 
     // Keep the address count in the summary in step with the address book.
-    const handleAddressCount = useCallback((count) => {
-        setProfile((p) => (p ? { ...p, addressCount: count } : p));
-    }, []);
+    const [addressCount, setAddressCount] = useState(null);
+    const handleAddressCount = useCallback((count) => setAddressCount(count), []);
 
     const roles = profile?.roles
         ? (Array.isArray(profile.roles) ? profile.roles : [profile.roles])
@@ -49,7 +39,7 @@ export default function AccountPage() {
         ? [
               { label: "Orders", value: profile.orderCount, to: "/orders", color: "bg-green-400" },
               { label: "Reviews", value: profile.reviewCount, color: "bg-pink-400" },
-              { label: "Addresses", value: profile.addressCount, color: "bg-yellow-400" },
+              { label: "Addresses", value: addressCount ?? profile.addressCount, color: "bg-yellow-400" },
           ]
         : [];
 

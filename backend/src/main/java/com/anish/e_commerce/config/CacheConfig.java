@@ -15,9 +15,8 @@ import org.springframework.context.annotation.Configuration;
 public class CacheConfig implements CachingConfigurer {
 
     /**
-     * Redis is a cache, not a source of truth: if it is down, or holds an entry
-     * written by an older build (JDK serialization breaks when Product changes
-     * shape), log it and fall through to the database instead of failing the request.
+     * The cache is never the source of truth: if a cache call fails, log it and
+     * fall through to the database instead of failing the request.
      */
     @Override
     public CacheErrorHandler errorHandler() {

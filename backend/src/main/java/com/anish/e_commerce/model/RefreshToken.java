@@ -1,30 +1,41 @@
 package com.anish.e_commerce.model;
 
-import java.io.Serializable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
-import org.springframework.data.redis.core.TimeToLive;
-import org.springframework.data.redis.core.index.Indexed;
 
+/**
+ * Stored in Postgres. It used to live in Redis with a TTL; Redis is gone, so
+ * expiry is now an explicit column, checked on use and swept by the cleanup job.
+ */
+@Entity
+@Table(name = "refresh_tokens", indexes = @Index(name = "idx_refresh_tokens_user_id", columnList = "userId"))
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@RedisHash("RefreshToken")
-public class RefreshToken implements Serializable {
+public class RefreshToken {
 
     @Id
+    @Column(length = 64)
     private String token;
 
-    @Indexed
+    @Column(nullable = false)
     private Long userId;
 
-    @TimeToLive
-    private Long expiration;
+    @Column(nullable = false)
+    private Instant expiresAt;
+
+    public boolean isExpired() {
+        return expiresAt.isBefore(Instant.now());
+    }
 }

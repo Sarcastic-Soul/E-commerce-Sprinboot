@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
     LineChart,
     Line,
@@ -23,31 +23,26 @@ import { errorMessage } from "../../utils/format.js";
 
 /** The original dashboard: stat cards plus orders/revenue charts. */
 export default function StatsOverview() {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const { darkMode } = useTheme();
-
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await api.get("/admin/stats");
-            setStats(res.data);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load dashboard stats."));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        load();
-    }, [load]);
+    const {
+        data: stats,
+        isPending: loading,
+        error: queryError,
+        refetch,
+    } = useQuery({
+        queryKey: ["admin", "stats"],
+        queryFn: async () => (await api.get("/admin/stats")).data,
+    });
+    const error = queryError ? errorMessage(queryError, "Could not load dashboard stats.") : null;
 
     if (loading) return <LoadingState variant="page" />;
     if (error || !stats)
-        return <ErrorState error={error || "Could not load dashboard stats."} onRetry={load} />;
+        return (
+            <ErrorState
+                error={error || "Could not load dashboard stats."}
+                onRetry={() => refetch()}
+            />
+        );
 
     const statCards = [
         {

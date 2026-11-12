@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import api from "../api/axios";
 import { useTheme } from "../context/ThemeContext";
@@ -16,46 +17,38 @@ import { btn, focusRing, panel } from "../utils/ui.js";
 export default function OrderDetailPage() {
     const { id } = useParams();
     const { darkMode } = useTheme();
-    const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
     const [confirming, setConfirming] = useState(false);
-    const [cancelling, setCancelling] = useState(false);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await api.get(`/orders/${id}`);
-            setOrder(data);
-        } catch (err) {
-            setError(
-                err.response?.status === 404
-                    ? "We could not find this order."
-                    : errorMessage(err, "Could not load this order."),
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
+    const {
+        data: order,
+        isPending: loading,
+        error: queryError,
+        refetch: load,
+    } = useQuery({
+        queryKey: ["orders", id],
+        queryFn: async () => (await api.get(`/orders/${id}`)).data,
+    });
+    const error = queryError
+        ? queryError.response?.status === 404
+            ? "We could not find this order."
+            : errorMessage(queryError, "Could not load this order.")
+        : null;
 
-    useEffect(() => {
-        load();
-    }, [load]);
-
-    const handleCancel = async () => {
-        setCancelling(true);
-        try {
-            const { data } = await api.post(`/orders/${id}/cancel`);
-            setOrder(data);
+    const cancelMutation = useMutation({
+        mutationFn: async () => (await api.post(`/orders/${id}/cancel`)).data,
+        onSuccess: (data) => {
+            queryClient.setQueryData(["orders", id], data);
+            queryClient.invalidateQueries({ queryKey: ["orders"] });
             setConfirming(false);
             toast.success("Order cancelled");
-        } catch (err) {
+        },
+        onError: (err) => {
             toast.error(errorMessage(err, "Could not cancel this order"));
-        } finally {
-            setCancelling(false);
-        }
-    };
+        },
+    });
+    const cancelling = cancelMutation.isPending;
+    const handleCancel = () => cancelMutation.mutate();
 
     if (loading) return <LoadingState variant="page" />;
     if (error) return <ErrorState error={error} onRetry={load} />;

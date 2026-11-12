@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { PulseIcon } from "@phosphor-icons/react";
 import { useTheme } from "../context/ThemeContext";
 import PageHeader from "../components/PageHeader";

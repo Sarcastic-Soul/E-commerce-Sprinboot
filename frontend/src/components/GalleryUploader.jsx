@@ -6,7 +6,7 @@ import { productImage, PLACEHOLDER } from "../utils/image.js";
 import { focusRing } from "../utils/ui.js";
 
 const MAX_GALLERY_IMAGES = 6;
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 
 /**
  * Extra product images (the main image stays separate). Each file is uploaded
@@ -33,7 +33,7 @@ export default function GalleryUploader({ images, onChange, onBusyChange, disabl
         }
         const accepted = files.slice(0, Math.max(slotsLeft, 0)).filter((f) => {
             if (f.size > MAX_BYTES) {
-                toast.error(`${f.name} is over 5 MB`);
+                toast.error(`${f.name} is over 4 MB`);
                 return false;
             }
             return true;
@@ -89,7 +89,7 @@ export default function GalleryUploader({ images, onChange, onBusyChange, disabl
                 className={`block w-full text-sm text-gray-700 file:mr-4 file:min-h-[44px] file:py-2 file:px-4 file:rounded-xl file:border-2 file:border-black file:text-sm file:font-semibold file:bg-[#d6d6d6] hover:file:bg-gray-200 disabled:opacity-50 ${focusRing}`}
             />
             <p className="mt-1 text-sm text-gray-700">
-                {images.length} of {MAX_GALLERY_IMAGES} added. Each image must be under 5 MB.
+                {images.length} of {MAX_GALLERY_IMAGES} added. Each image must be under 4 MB.
             </p>
 
             {(images.length > 0 || uploading > 0) && (

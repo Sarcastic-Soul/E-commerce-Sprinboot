@@ -1,6 +1,7 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useEffect, useState, useCallback, lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { useState, useCallback, lazy, Suspense } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
     CaretLeftIcon as ChevronLeft,
     CaretRightIcon as ChevronRight,
@@ -51,47 +52,43 @@ const lazyPage = (node) => (
 );
 
 function InnerApp() {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [showCart, setShowCart] = useState(false);
 
-    // NEW Pagination States
     const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
     const [isFiltering, setIsFiltering] = useState(false);
+    // Results pushed up by the Navbar search/filters; only used while filtering.
+    const [searchResult, setSearchResult] = useState({ items: [], totalPages: 1 });
     const [filterResetSignal, setFilterResetSignal] = useState(0);
     const [sort, setSort] = useState("newest");
 
     const { darkMode } = useTheme();
 
-    const fetchProducts = useCallback(async (page, sortBy) => {
-        try {
-            setLoading(true);
-            // Request the specific page
-            const response = await api.get("/products", {
-                params: { page, size: 12, sort: sortBy },
+    // Default paginated catalog. Paused while the Navbar filters own the grid;
+    // keepPreviousData stops the grid flashing empty between pages.
+    const catalog = useQuery({
+        queryKey: ["products", "list", currentPage, sort],
+        queryFn: async () => {
+            const { data } = await api.get("/products", {
+                params: { page: currentPage, size: 12, sort },
             });
-
             // Spring serializes Page VIA_DTO (see ECommerceApplication): items in
             // `content`, totals nested under `page`.
-            setProducts(response.data.content || response.data);
-            setTotalPages(response.data.page?.totalPages || 1);
-            setError(null);
-        } catch (err) {
-            setError("Failed to fetch products. Please try again later.");
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+            return {
+                items: data.content || data,
+                totalPages: data.page?.totalPages || 1,
+            };
+        },
+        enabled: !isFiltering,
+        placeholderData: keepPreviousData,
+    });
 
-    // Only fetch paginated defaults if the user is NOT using the Navbar filters
-    useEffect(() => {
-        if (!isFiltering) {
-            fetchProducts(currentPage, sort);
-        }
-    }, [currentPage, isFiltering, sort, fetchProducts]);
+    const products = isFiltering ? searchResult.items : (catalog.data?.items ?? []);
+    const totalPages = isFiltering ? searchResult.totalPages : (catalog.data?.totalPages ?? 0);
+    const loading = !isFiltering && catalog.isPending;
+    const error =
+        !isFiltering && catalog.isError
+            ? "Failed to fetch products. Please try again later."
+            : null;
 
     const handleSortChange = (e) => {
         setSort(e.target.value);
@@ -114,11 +111,12 @@ function InnerApp() {
         setIsFiltering(true);
 
         if (data?.content) {
-            setProducts(data.content);
-            setTotalPages(data.page?.totalPages || 1);
+            setSearchResult({
+                items: data.content,
+                totalPages: data.page?.totalPages || 1,
+            });
         } else {
-            setProducts(Array.isArray(data) ? data : []);
-            setTotalPages(1);
+            setSearchResult({ items: Array.isArray(data) ? data : [], totalPages: 1 });
         }
     }, []);
 
@@ -168,9 +166,7 @@ function InnerApp() {
                                 ) : error ? (
                                     <ErrorState
                                         error={error}
-                                        onRetry={() =>
-                                            fetchProducts(currentPage, sort)
-                                        }
+                                        onRetry={() => catalog.refetch()}
                                     />
                                 ) : (
                                     <>

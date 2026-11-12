@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import api from "../api/axios";
+import { queryClient } from "../api/queryClient";
 import { toast } from "sonner";
 import { PRODUCT_CATEGORIES } from "../constants/categories.js";
 import GalleryUploader from "../components/GalleryUploader";
@@ -36,12 +37,12 @@ export default function AddProduct() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const maxSize = 5 * 1024 * 1024; // 5MB limit
+        const maxSize = 4 * 1024 * 1024; // 4MB: Vercel caps request bodies at 4.5MB
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
         if (file.size > maxSize) {
             toast.error(
-                `File size is ${sizeInMB} MB. Please upload a file smaller than 5 MB.`,
+                `File size is ${sizeInMB} MB. Please upload a file smaller than 4 MB.`,
             );
             setImage(null);
             setPreview(null);
@@ -92,6 +93,8 @@ export default function AddProduct() {
 
             const response = await api.post("/product", productWithImage);
             if (response.status === 201) {
+            queryClient.invalidateQueries({ queryKey: ["products"] });
+            queryClient.invalidateQueries({ queryKey: ["admin"] });
                 toast.success("Product added");
                 setProduct({
                     name: "",

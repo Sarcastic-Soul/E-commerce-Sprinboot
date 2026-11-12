@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useId, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useId, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
     CircleNotchIcon,
@@ -29,12 +30,43 @@ export default function CheckoutPage() {
     const navigate = useNavigate();
     const couponId = useId();
 
-    const [cartItems, setCartItems] = useState([]);
-    const [addresses, setAddresses] = useState([]);
-    const [selectedId, setSelectedId] = useState(null);
-    const [showNewAddress, setShowNewAddress] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
+
+    // Always re-read the cart and addresses when checkout opens (staleTime 0).
+    const cartQuery = useQuery({
+        queryKey: ["cart"],
+        queryFn: async () => (await api.get(`/cart/${user.username}`)).data || [],
+        enabled: Boolean(user?.username),
+        staleTime: 0,
+    });
+    const addressQuery = useQuery({
+        queryKey: ["addresses"],
+        queryFn: async () => (await api.get("/user/addresses")).data || [],
+        staleTime: 0,
+    });
+    const cartItems = cartQuery.data ?? [];
+    const addresses = addressQuery.data ?? [];
+    const loading = cartQuery.isPending || addressQuery.isPending;
+    const queryError = cartQuery.error || addressQuery.error;
+    const error = queryError
+        ? errorMessage(queryError, "Could not load checkout. Please try again.")
+        : null;
+    const load = () => {
+        if (cartQuery.isError) cartQuery.refetch();
+        if (addressQuery.isError) addressQuery.refetch();
+    };
+
+    // Until the user picks one, use the default address (or the first).
+    const [pickedId, setSelectedId] = useState(null);
+    const preferred = addresses.find((a) => a.isDefault) || addresses[0];
+    const selectedId = addresses.some((a) => a.id === pickedId)
+        ? pickedId
+        : preferred
+          ? preferred.id
+          : null;
+    // Until the user toggles it, show the new-address form only when there are no addresses.
+    const [newAddressOpen, setShowNewAddress] = useState(null);
+    const showNewAddress = newAddressOpen ?? addresses.length === 0;
 
     const [couponInput, setCouponInput] = useState("");
     const [coupon, setCoupon] = useState(null); // validate response
@@ -43,31 +75,6 @@ export default function CheckoutPage() {
 
     const [paying, setPaying] = useState(false);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const [cartRes, addrRes] = await Promise.all([
-                api.get(`/cart/${user.username}`),
-                api.get("/user/addresses"),
-            ]);
-            setCartItems(cartRes.data || []);
-            const list = addrRes.data || [];
-            setAddresses(list);
-            const preferred = list.find((a) => a.isDefault) || list[0];
-            setSelectedId(preferred ? preferred.id : null);
-            setShowNewAddress(list.length === 0);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load checkout. Please try again."));
-        } finally {
-            setLoading(false);
-        }
-    }, [user.username]);
-
-    useEffect(() => {
-        load();
-    }, [load]);
-
     const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
     const discount = coupon ? Number(coupon.discount) : 0;
     const total = coupon ? Number(coupon.total) : subtotal;
@@ -75,7 +82,7 @@ export default function CheckoutPage() {
     const handleAddAddress = async (values) => {
         try {
             const { data } = await api.post("/user/addresses", values);
-            setAddresses((list) => [...list, data]);
+            queryClient.setQueryData(["addresses"], (list) => [...(list || []), data]);
             setSelectedId(data.id);
             setShowNewAddress(false);
             toast.success("Address saved");
@@ -136,6 +143,7 @@ export default function CheckoutPage() {
                 couponCode: coupon?.code ?? null,
             });
             order = data;
+            queryClient.invalidateQueries({ queryKey: ["orders"] });
         } catch (err) {
             toast.error(errorMessage(err, "Could not start checkout"));
             setPaying(false);
@@ -149,6 +157,7 @@ export default function CheckoutPage() {
             darkMode,
             onSuccess: () => {
                 setCartItemCount(0);
+                queryClient.invalidateQueries({ queryKey: ["orders"] });
                 toast.success("Payment received. Your order is placed.");
                 navigate(`/orders/${order.id}`);
             },

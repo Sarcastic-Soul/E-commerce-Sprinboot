@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import ProductCard from "./ProductCard";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTheme } from "../context/ThemeContext";
 
 export default function ProductGrid({ products, onClearFilters }) {

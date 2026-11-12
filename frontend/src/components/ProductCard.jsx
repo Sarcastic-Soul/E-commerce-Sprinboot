@@ -7,7 +7,7 @@ import StarRating from "./StarRating";
 import { focusRing } from "../utils/ui.js";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTheme } from "../context/ThemeContext";
 import { toast } from "sonner";
 import api from "../api/axios.js";

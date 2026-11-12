@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MapPinIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import api from "../../api/axios";
@@ -12,37 +13,52 @@ import { btn, panel } from "../../utils/ui.js";
 
 export default function AddressBook({ onCountChange }) {
     const { darkMode } = useTheme();
-    const [addresses, setAddresses] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
     const [editingId, setEditingId] = useState(null); // id, "new", or null
     const [deletingId, setDeletingId] = useState(null); // id awaiting confirm
     const [busyId, setBusyId] = useState(null);
 
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data } = await api.get("/user/addresses");
-            setAddresses(data || []);
-            onCountChange?.((data || []).length);
-        } catch (err) {
-            setError(errorMessage(err, "Could not load your addresses."));
-        } finally {
-            setLoading(false);
-        }
-    }, [onCountChange]);
+    const {
+        data,
+        isPending: loading,
+        error: queryError,
+        refetch,
+    } = useQuery({
+        queryKey: ["addresses"],
+        queryFn: async () => (await api.get("/user/addresses")).data || [],
+    });
+    const addresses = data ?? [];
+    const error = queryError ? errorMessage(queryError, "Could not load your addresses.") : null;
 
     useEffect(() => {
-        load();
-    }, [load]);
+        if (data) onCountChange?.(data.length);
+    }, [data, onCountChange]);
+
+    // server decides the default and order, so refetch after every write
+    const reload = () => queryClient.invalidateQueries({ queryKey: ["addresses"] });
+
+    const createAddress = useMutation({
+        mutationFn: (values) => api.post("/user/addresses", values),
+        onSuccess: reload,
+    });
+    const updateAddress = useMutation({
+        mutationFn: ({ id, body }) => api.put(`/user/addresses/${id}`, body),
+        onSuccess: reload,
+    });
+    const deleteAddress = useMutation({
+        mutationFn: (id) => api.delete(`/user/addresses/${id}`),
+        onSuccess: reload,
+    });
+    const defaultAddress = useMutation({
+        mutationFn: (id) => api.put(`/user/addresses/${id}/default`),
+        onSuccess: reload,
+    });
 
     const handleCreate = async (values) => {
         try {
-            await api.post("/user/addresses", values);
+            await createAddress.mutateAsync(values);
             toast.success("Address added");
             setEditingId(null);
-            await load(); // server decides the default and order
         } catch (err) {
             toast.error(errorMessage(err, "Could not save the address"));
         }
@@ -51,13 +67,12 @@ export default function AddressBook({ onCountChange }) {
     const handleUpdate = async (id, values) => {
         try {
             const current = addresses.find((a) => a.id === id);
-            await api.put(`/user/addresses/${id}`, {
-                ...values,
-                isDefault: current?.isDefault ?? false,
+            await updateAddress.mutateAsync({
+                id,
+                body: { ...values, isDefault: current?.isDefault ?? false },
             });
             toast.success("Address updated");
             setEditingId(null);
-            await load();
         } catch (err) {
             toast.error(errorMessage(err, "Could not update the address"));
         }
@@ -66,10 +81,9 @@ export default function AddressBook({ onCountChange }) {
     const handleDelete = async (id) => {
         setBusyId(id);
         try {
-            await api.delete(`/user/addresses/${id}`);
+            await deleteAddress.mutateAsync(id);
             toast.success("Address deleted");
             setDeletingId(null);
-            await load();
         } catch (err) {
             toast.error(errorMessage(err, "Could not delete the address"));
         } finally {
@@ -80,9 +94,8 @@ export default function AddressBook({ onCountChange }) {
     const handleMakeDefault = async (id) => {
         setBusyId(id);
         try {
-            await api.put(`/user/addresses/${id}/default`);
+            await defaultAddress.mutateAsync(id);
             toast.success("Default address updated");
-            await load();
         } catch (err) {
             toast.error(errorMessage(err, "Could not change the default address"));
         } finally {
@@ -117,7 +130,7 @@ export default function AddressBook({ onCountChange }) {
             {loading ? (
                 <LoadingState variant="list" count={2} />
             ) : error ? (
-                <ErrorState error={error} onRetry={load} />
+                <ErrorState error={error} onRetry={() => refetch()} />
             ) : addresses.length === 0 ? (
                 editingId !== "new" && (
                     <div className="text-center py-8">
