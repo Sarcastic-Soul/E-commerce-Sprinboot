@@ -2,17 +2,18 @@
 
 # 🛒 BrutShop
 
-**Neo-brutalist full-stack e-commerce** — React 19 + Spring Boot 3, shipped as a single Docker monolith.
+**Neo-brutalist full-stack e-commerce** — React 19 + Spring Boot 4, deployed on Vercel.
 
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/Sarcastic-Soul/E-commerce-Sprinboot/deploy.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI%2FCD)](https://github.com/Sarcastic-Soul/E-commerce-Sprinboot/actions/workflows/deploy.yml)
 [![Live Demo](https://img.shields.io/badge/demo-live-success?style=flat-square&logo=vercel&logoColor=white)](https://brutshop.vercel.app/)
 [![API Docs](https://img.shields.io/badge/API-Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)](https://brutshop.vercel.app/swagger-ui/index.html)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-25-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?style=flat-square&logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
@@ -56,7 +57,7 @@ graph TD
 
     Repositories --> Database[(PostgreSQL Database)]
 ```
-
+- On Vercel the static frontend and the Spring Boot container run as two services in one project. The root `Dockerfile` can still bundle React into the JAR as **one artifact** for self-hosting.
 - React compiles into the Spring Boot JAR at build time → **one deployable artifact**.
 - Vite proxies `/api` to `localhost:8080` in dev — no CORS setup needed locally.
 
@@ -66,8 +67,8 @@ graph TD
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | React 19 (Vite 8), Tailwind CSS 4, React Router 7, Axios, Recharts, Phosphor Icons, Sonner |
-| **Backend** | Spring Boot 4.1 (Java 21+, Java 25 in Docker), Spring Security + JWT, Spring Data JPA, Bucket4j |
+| **Frontend** | React 19 + TypeScript 7 (Vite 8), TanStack Query, React Router 8, Tailwind CSS 4, Axios, Recharts, Phosphor Icons, Sonner, oxlint |
+| **Backend** | Spring Boot 4.1 (Java 25), Spring Security + JWT, Spring Data JPA, Bucket4j |
 | **Data** | PostgreSQL (Neon in prod: data, refresh tokens, login rate limits), Caffeine (in-memory catalog cache) |
 | **Integrations** | Razorpay (payments, test mode), Cloudinary (image hosting) |
 | **Testing** | JUnit 5, Mockito, Spring Security Test |
@@ -105,7 +106,7 @@ graph TD
 
 ## 💻 Local Setup
 
-**Prerequisites:** Java 21 · Node 18+ · pnpm · PostgreSQL (database `brutshop`)
+**Prerequisites:** Java 25 · Node 22.22+ · pnpm · PostgreSQL (database `brutshop`)
 
 ```bash
 # 1. Backend → localhost:8080

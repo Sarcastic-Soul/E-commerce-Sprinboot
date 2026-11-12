@@ -5,9 +5,11 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build",
-        "lint": "eslint .",
-        "preview": "vite preview"
+        "build": "tsc -b && vite build",
+        "typecheck": "tsc -b",
+        "lint": "oxlint",
+        "preview": "vite preview",
+        "gen:api": "pnpm dlx --package=openapi-typescript@7 --package=typescript@6 openapi-typescript ${API_DOCS_URL:-http://localhost:8080/v3/api-docs} --properties-required-by-default -o src/api/schema.d.ts"
     },
     "dependencies": {
         "@phosphor-icons/react": "^2.1.10",
@@ -22,14 +24,13 @@
         "tailwindcss": "^4.3.5"
     },
     "devDependencies": {
-        "@eslint/js": "^10.0.1",
+        "@types/node": "^26.6.6",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
         "@vitejs/plugin-react": "^6.3.0",
-        "eslint": "^10.14.0",
-        "eslint-plugin-react-hooks": "^7.1.1",
-        "eslint-plugin-react-refresh": "^0.5.7",
-        "globals": "^17.14.0",
+        "oxlint": "^1.93.0",
+        "oxlint-tsgolint": "7.0.2007",
+        "typescript": "~7.0.2",
         "vite": "^8.3.8"
     },
     "packageManager": "pnpm@12.18.0",
