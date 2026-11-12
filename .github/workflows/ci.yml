@@ -21,7 +21,8 @@ jobs:
                   distribution: temurin
                   java-version: "25"
                   cache: maven
-            - run: ./mvnw -B -ntp test
+            # The Maven wrapper is gitignored, so use the runner's Maven.
+            - run: mvn -B -ntp test
 
     frontend:
         name: Frontend lint and build
